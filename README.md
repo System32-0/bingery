@@ -7,6 +7,8 @@
 > Approximately 80% of this codebase is AI-generated. It was built this way intentionally for efficiency and convenience.
  
 A self-hosted media tracking app for anime, manga, manhwa, manhua, books, and movies.
+
+**Live site:** [bingery.cdespalo.com](https://bingery.cdespalo.com)
  
 ## Features
  
