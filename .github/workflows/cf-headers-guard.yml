@@ -1,0 +1,35 @@
+name: Cloudflare Headers Guard
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  check-headers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify _headers file exists
+        run: |
+          if [ ! -f "_headers" ]; then
+            echo "Missing _headers file — CF Pages deployment has no security headers!"
+            exit 1
+          fi
+          echo "_headers file found"
+
+      - name: Check for required security headers
+        run: |
+          required=("X-Frame-Options" "Content-Security-Policy" "X-Content-Type-Options" "Referrer-Policy")
+          missing=()
+          for header in "${required[@]}"; do
+            if ! grep -q "$header" _headers; then
+              missing+=("$header")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "Missing required headers: ${missing[*]}"
+            exit 1
+          fi
+          echo "All required security headers present"

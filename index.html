@@ -1,0 +1,4544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!--
+    ╔══════════════════════════════════════════════════════════════╗
+    ║  BINGERY — Local Static Media Tracker                       ║
+    ║  A privacy-focused, zero-dependency media tracking app.     ║
+    ║  All data is stored locally (data.json + localStorage).     ║
+    ╚══════════════════════════════════════════════════════════════╝
+  -->
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Bingery — a private, local media tracking library for anime, manga, books, and movies."/>
+
+  <!--
+    ┌─────────────────────────────────────────────────────────────┐
+    │ CONTENT SECURITY POLICY                                     │
+    │ • script-src 'self'        — only local .js files allowed   │
+    │ • style-src 'unsafe-inline'— inline <style> block only      │
+    │ • img-src 'self' data:     — local images + data: URIs      │
+    │ • connect-src 'self'       — only same-origin fetch()       │
+    │ No external domains are permitted.                          │
+    └─────────────────────────────────────────────────────────────┘
+  -->
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="
+      default-src 'none';
+      script-src 'self';
+      style-src 'unsafe-inline';
+      img-src 'self' data: blob:;
+      connect-src 'self' blob:;
+      font-src 'self'
+    "
+  />
+
+  <title>Bingery — Media Tracker</title>
+  <style>
+/*
+ * ╔═══════════════════════════════════════════════════════════════╗
+ * ║  BINGERY — styles.css                                        ║
+ * ║  Dark-mode-first, fully responsive stylesheet.               ║
+ * ║  Uses CSS custom properties (variables) for consistent        ║
+ * ║  theming and easy customisation.                             ║
+ * ║                                                              ║
+ * ║  Table of Contents:                                          ║
+ * ║  1.  Custom Properties (Design Tokens)                       ║
+ * ║  2.  CSS Reset & Base Styles                                 ║
+ * ║  3.  Utility / Accessibility Helpers                         ║
+ * ║  4.  Layout — App Shell                                      ║
+ * ║  5.  Header & Branding                                       ║
+ * ║  6.  Search Bar                                              ║
+ * ║  7.  Filter Panel (Sidebar)                                  ║
+ * ║  8.  Filter Chips & Sort Select                              ║
+ * ║  9.  Stats Bar                                               ║
+ * ║  10. Media Grid                                              ║
+ * ║  11. Media Card                                              ║
+ * ║  12. Type Badge Colors                                       ║
+ * ║  13. Status Badge Colors                                     ║
+ * ║  14. Loading / Empty / Error States                          ║
+ * ║  15. Modal Overlay                                           ║
+ * ║  16. Modal Content Layout                                    ║
+ * ║  17. Animations & Transitions                                ║
+ * ║  18. Responsive Breakpoints                                  ║
+ * ╚═══════════════════════════════════════════════════════════════╝
+ */
+
+/* ═══════════════════════════════════════════════════════════════
+   1. CUSTOM PROPERTIES (Design Tokens)
+   All colours, spacing, and typography values live here for
+   easy theming. Override any variable to change the whole UI.
+═══════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Colour palette ── */
+  --bg-primary:      #0d0f14;   /* Main page background */
+  --bg-secondary:    #131720;   /* Card / sidebar backgrounds */
+  --bg-elevated:     #1a1f2e;   /* Hover states, modal bg */
+  --bg-overlay:      rgba(0, 0, 0, 0.75); /* Modal backdrop */
+
+  --border:          #252b3b;   /* Subtle borders */
+  --border-focus:    #4a80d4;   /* Keyboard focus rings */
+
+  --text-primary:    #e8eaf0;   /* Main text */
+  --text-secondary:  #8a90a8;   /* Muted labels, metadata */
+  --text-muted:      #4a5068;   /* Placeholder, disabled text */
+
+  --accent:          #4a80d4;   /* Primary interactive accent (blue) */
+  --accent-hover:    #6298e8;   /* Accent on hover */
+  --accent-subtle:   rgba(74, 128, 212, 0.15); /* Tinted backgrounds */
+
+  --danger:          #e85050;   /* Error states */
+  --warning:         #e8c030;   /* Warning / in-progress */
+  --success:         #40c870;   /* Completed status */
+
+  /* ── Type-badge colours (per media type) ── */
+  --type-anime:      #e8703a;
+  --type-manga:      #30c8c0;
+  --type-manhwa:     #a060e0;
+  --type-manhua:     #e878a8;
+  --type-book:       #70c038;
+  --type-movie:      #e8c030;
+
+  /* ── Status colours ── */
+  --status-completed:    #40c870;
+  --status-in-progress:  #e8c030;
+  --status-dropped:      #e85050;
+  --status-planned:      #4a80d4;
+
+  /* ── Rating colour ── */
+  --star-fill:       #e8c030;
+  --star-empty:      #2a3048;
+
+  /* ── Spacing scale (multiples of 4 px) ── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ── Typography ── */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont,
+               "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code",
+               Menlo, Consolas, monospace;
+
+  --text-xs:   0.70rem;   /* 11.2 px */
+  --text-sm:   0.80rem;   /* 12.8 px */
+  --text-base: 0.9375rem; /* 15 px   */
+  --text-md:   1.0625rem; /* 17 px   */
+  --text-lg:   1.25rem;   /* 20 px   */
+  --text-xl:   1.5rem;    /* 24 px   */
+  --text-2xl:  1.875rem;  /* 30 px   */
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-bold:    700;
+
+  /* ── Borders & Shapes ── */
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+  --radius-xl:  16px;
+
+  /* ── Shadows ── */
+  --shadow-card:   0 2px 12px rgba(0, 0, 0, 0.5);
+  --shadow-modal:  0 8px 48px rgba(0, 0, 0, 0.75);
+  --shadow-focus:  0 0 0 3px rgba(74, 128, 212, 0.45);
+
+  /* ── Layout ── */
+  --header-height: 64px;
+  --sidebar-width: 240px;
+  --card-min-width: 160px;
+
+  /* ── Grid gap ── */
+  --grid-gap: 16px;
+
+  /* ── Transitions ── */
+  --transition-fast:   120ms ease-out;
+  --transition-normal: 220ms ease-out;
+  --transition-slow:   350ms ease-out;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   2. CSS RESET & BASE STYLES
+   Opinionated reset based on modern best practices.
+═══════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure the HTML `hidden` attribute always hides elements regardless of
+   display properties set by other rules (e.g. display: flex on .empty-state). */
+[hidden] { display: none !important; }
+
+html {
+  /* Smooth scroll for in-page navigation */
+  scroll-behavior: smooth;
+  /* Improve font rendering */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: 1.6;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  /* Prevent horizontal scroll from accidental overflow */
+  overflow-x: hidden;
+  min-height: 100dvh;
+}
+
+/* Reset list styles */
+ul, ol { list-style: none; }
+
+/* Reset button defaults */
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+/* Reset anchor defaults */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Reset input defaults */
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  outline: none;
+}
+
+/* Reset image defaults */
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Remove default fieldset / legend styles */
+fieldset { border: none; }
+
+/* Code element */
+code {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--bg-elevated);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   3. UTILITY / ACCESSIBILITY HELPERS
+═══════════════════════════════════════════════════════════════ */
+
+/* Visually hide content while keeping it accessible to screen readers */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip-link for keyboard users — jumps past header to main content */
+.skip-link {
+  position: fixed;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 9999;
+  padding: var(--space-2) var(--space-4);
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  transform: translateY(-200%);
+  transition: transform var(--transition-fast);
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* Standard focus ring — applied globally */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Body scroll lock — applied via JS classList when a modal is open.
+   Uses a CSS class instead of element.style to stay CSP-compliant. */
+body.modal-open { overflow: hidden; }
+
+/* ═══════════════════════════════════════════════════════════════
+   4. LAYOUT — APP SHELL
+═══════════════════════════════════════════════════════════════ */
+
+/* Full-viewport layout with sticky header */
+.app-layout {
+  display: flex;
+  min-height: calc(100dvh - var(--header-height));
+  margin-top: var(--header-height);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   5. HEADER & BRANDING
+═══════════════════════════════════════════════════════════════ */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: var(--header-height);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  /* Glass-like depth with a subtle shadow */
+  box-shadow: 0 1px 16px rgba(0, 0, 0, 0.4);
+}
+
+.header-inner {
+  max-width: 1600px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* ── Brand / Logo ── */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.brand-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
+}
+
+.brand-name {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+/* ── Filter toggle button — visible on all screen sizes ── */
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+.filter-toggle svg { width: 18px; height: 18px; }
+.filter-toggle:hover,
+.filter-toggle[aria-expanded="true"] {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   6. SEARCH BAR
+═══════════════════════════════════════════════════════════════ */
+.search-wrapper {
+  flex: 1;
+  position: relative;
+  max-width: 480px;
+}
+
+.search-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color var(--transition-fast);
+}
+
+.search-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--space-8) 0 calc(var(--space-3) + 18px + var(--space-2));
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 20px; /* fully rounded pill shape */
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
+              background var(--transition-fast);
+}
+/* Override browser's default search-input decorations */
+.search-input::-webkit-search-cancel-button { display: none; }
+.search-input::placeholder { color: var(--text-muted); }
+.search-input:focus {
+  border-color: var(--border-focus);
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-focus);
+}
+.search-input:focus ~ .search-icon,
+.search-wrapper:focus-within .search-icon {
+  color: var(--accent);
+}
+
+/* Clear button inside search field */
+.search-clear {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--text-muted);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.search-clear svg { width: 14px; height: 14px; }
+.search-clear:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+/* Hidden by default; shown via app.js when input has value */
+.search-clear[hidden] { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   7. FILTER PANEL (Sidebar)
+═══════════════════════════════════════════════════════════════ */
+.filter-panel {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  padding: var(--space-6) var(--space-4);
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  /* Stick to viewport top (below header) */
+  position: sticky;
+  top: var(--header-height);
+  height: calc(100dvh - var(--header-height));
+  /* Smooth scroll within the sidebar */
+  overscroll-behavior: contain;
+}
+
+/* Desktop: hide the sidebar when toggle is collapsed */
+.filter-panel.is-hidden {
+  display: none;
+}
+
+/* Each filter group */
+.filter-section {
+  margin-bottom: var(--space-6);
+}
+
+/* Section heading */
+.filter-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+
+/* Reset button at the bottom of the sidebar */
+.reset-btn {
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+.reset-btn:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   8. FILTER CHIPS & SORT SELECT
+═══════════════════════════════════════════════════════════════ */
+
+/* Container for chip groups */
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Genre chips wrap more so allow extra room */
+.genre-chips { max-height: 200px; overflow-y: auto; }
+
+/* Individual filter chip button */
+.chip {
+  padding: 3px var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast),
+              border-color var(--transition-fast), transform var(--transition-fast);
+  user-select: none;
+}
+.chip:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* Active / selected chip */
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.chip:active { transform: scale(0.96); }
+
+/* Sort dropdown */
+.sort-select-wrapper {
+  position: relative;
+}
+
+.sort-select {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  /* Custom dropdown arrow using CSS */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolyline points='6 9 12 15 18 9' fill='none' stroke='%234a80d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-2) center;
+  background-size: 18px;
+  padding-right: 32px;
+  transition: border-color var(--transition-fast);
+}
+.sort-select:hover { border-color: var(--accent); }
+.sort-select:focus { border-color: var(--border-focus); box-shadow: var(--shadow-focus); }
+.sort-select option { background: var(--bg-secondary); }
+
+/* ═══════════════════════════════════════════════════════════════
+   9. STATS BAR
+═══════════════════════════════════════════════════════════════ */
+.stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+}
+
+.results-count {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: var(--weight-medium);
+}
+
+.stats-meta {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* Small type stat badge */
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   10. MEDIA GRID
+   Responsive auto-fill grid that adapts the number of columns
+   to the available viewport width.
+═══════════════════════════════════════════════════════════════ */
+.main-content {
+  flex: 1;
+  min-width: 0; /* prevent overflow in flex child */
+  display: flex;
+  flex-direction: column;
+}
+
+.media-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-min-width), 1fr));
+  gap: var(--space-4);
+  padding: var(--space-5);
+  align-content: start;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   11. MEDIA CARD
+   Each card represents one media entry.
+═══════════════════════════════════════════════════════════════ */
+.media-card {
+  position: relative;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  /* Remove default list-item role styling */
+  list-style: none;
+  /* Allow the card to grow to fill its grid cell */
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal),
+              border-color var(--transition-normal);
+  /* Performance hint: promote to its own compositor layer */
+  will-change: transform;
+}
+
+.media-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card), 0 8px 32px rgba(0, 0, 0, 0.4);
+  border-color: var(--accent);
+}
+
+.media-card:focus-visible {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+/* Cover image container — maintains 2:3 aspect ratio */
+.card-cover-wrap {
+  position: relative;
+  width: 100%;
+  /* Intrinsic aspect ratio: width / height = 2 / 3 */
+  aspect-ratio: 2 / 3;
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+
+/* Cover image — fills the container, cropped to fit */
+.card-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform var(--transition-slow), filter var(--transition-slow);
+}
+.media-card:hover .card-cover {
+  transform: scale(1.04);
+  filter: brightness(0.85);
+}
+
+
+/* ── Card bottom info section ── */
+.card-info {
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+.card-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  line-height: 1.35;
+  /* Clamp to 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-author {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  /* Single line clamp */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Card meta row (type badge + rating) ── */
+.card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-2);
+}
+
+/* ── Type badge ── */
+.type-badge {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  /* Color is set per-type in section 12 */
+}
+
+/* ── Star rating display ── */
+.card-rating {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--star-fill);
+  flex-shrink: 0;
+}
+.card-rating-value { color: var(--text-primary); }
+.rating-star { color: var(--star-fill); }
+.rating-star-half  { color: var(--star-fill); opacity: 0.55; }
+
+/* ── Percentage completion badge (right side of card) ── */
+.card-pct-badge {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── Pin badge on card ── */
+.card-pin-badge {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  color: var(--accent);
+  z-index: 2;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+
+/* ── Bulk select checkbox overlay ── */
+.card-bulk-check {
+  display: none;
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  z-index: 3;
+  align-items: center;
+  justify-content: center;
+}
+.card-bulk-check svg { display: none; color: #fff; }
+/* Show checkbox circle in select mode */
+.bulk-select-active .card-bulk-check { display: flex; }
+/* Hide pin badge in select mode to avoid overlap */
+.bulk-select-active .card-pin-badge { display: none; }
+/* Selected card styling */
+.media-card.bulk-selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent), var(--shadow-card); }
+.media-card.bulk-selected .card-bulk-check {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.media-card.bulk-selected .card-bulk-check svg { display: block; }
+
+/* ── Pinned card subtle accent ── */
+.media-card.card-pinned {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+/* ── Pin divider between pinned and unpinned entries ── */
+.pin-divider {
+  grid-column: 1 / -1;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+}
+.pin-divider::before,
+.pin-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.pin-divider-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--weight-bold);
+  white-space: nowrap;
+}
+
+/* ── Stats bar left side grouping ── */
+.stats-bar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ── Bulk select button (in stats bar) ── */
+.bulk-select-btn {
+  padding: var(--space-1) var(--space-3) !important;
+  font-size: var(--text-xs) !important;
+}
+.bulk-select-btn svg { width: 14px; height: 14px; }
+
+/* ── Bulk toolbar ── */
+.bulk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.bulk-toolbar-count {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+  min-width: 80px;
+}
+.bulk-toolbar-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+.bulk-toolbar-actions .btn-secondary,
+.bulk-toolbar-actions .btn-danger {
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-3);
+}
+.bulk-toolbar-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.bulk-toolbar > .btn-secondary:last-child {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-3);
+}
+
+/* ── Bulk picker dropdown ── */
+.bulk-picker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: var(--space-5);
+  z-index: 50;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-3);
+  min-width: 180px;
+}
+.bulk-picker-label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+  font-weight: var(--weight-medium);
+}
+.bulk-picker-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.bulk-picker-option:hover {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+/* ── Pin button active state in modal ── */
+.btn-pin-active {
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+/* ── Status indicator dot ── */
+.status-dot {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-secondary);
+  /* Color is set per-status in section 13 */
+}
+
+/* ── Genre tags on card ── */
+.card-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+.genre-tag {
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   12. TYPE BADGE COLOURS
+   Each media type has a distinct background and text colour for
+   fast visual scanning.
+═══════════════════════════════════════════════════════════════ */
+.type-anime   { background: rgba(232, 112, 58,  0.2); color: var(--type-anime);   }
+.type-manga   { background: rgba(48,  200, 192, 0.2); color: var(--type-manga);   }
+.type-manhwa  { background: rgba(160, 96,  224, 0.2); color: var(--type-manhwa);  }
+.type-manhua  { background: rgba(232, 120, 168, 0.2); color: var(--type-manhua);  }
+.type-book    { background: rgba(112, 192, 56,  0.2); color: var(--type-book);    }
+.type-movie   { background: rgba(232, 192, 48,  0.2); color: var(--type-movie);   }
+
+/* ═══════════════════════════════════════════════════════════════
+   13. STATUS BADGE COLOURS
+═══════════════════════════════════════════════════════════════ */
+.status-completed    { background-color: var(--status-completed);   }
+.status-in-progress  { background-color: var(--status-in-progress); }
+.status-dropped      { background-color: var(--status-dropped);     }
+.status-planned      { background-color: var(--status-planned);     }
+
+/* Inline status pill (used in modal and stats) */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+}
+.status-pill::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.status-pill.status-completed   { color: var(--status-completed);   background: rgba(64,  200, 112, 0.15); }
+.status-pill.status-completed::before   { background: var(--status-completed);   }
+.status-pill.status-in-progress { color: var(--status-in-progress); background: rgba(232, 192, 48,  0.15); }
+.status-pill.status-in-progress::before { background: var(--status-in-progress); }
+.status-pill.status-dropped     { color: var(--status-dropped);     background: rgba(232, 80,  80,  0.15); }
+.status-pill.status-dropped::before     { background: var(--status-dropped);     }
+.status-pill.status-planned     { color: var(--status-planned);     background: rgba(74,  128, 212, 0.15); }
+.status-pill.status-planned::before     { background: var(--status-planned);     }
+
+/* ═══════════════════════════════════════════════════════════════
+   14. LOADING / EMPTY / ERROR STATES
+═══════════════════════════════════════════════════════════════ */
+
+/* Loading spinner */
+.loading-state {
+  grid-column: 1 / -1; /* span full grid width */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-12);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  color: var(--accent);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty state */
+.empty-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  margin: auto; /* centre within the flex main-content column */
+}
+
+.empty-state svg,
+.error-state svg {
+  width: 56px;
+  height: 56px;
+  color: var(--text-muted);
+}
+
+.empty-title,
+.error-title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-secondary);
+}
+
+.empty-sub,
+.error-sub {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  max-width: 380px;
+}
+
+.error-state { color: var(--danger); }
+.error-state svg { color: var(--danger); }
+.error-title { color: var(--danger); }
+
+/* ═══════════════════════════════════════════════════════════════
+   15. MODAL OVERLAY
+═══════════════════════════════════════════════════════════════ */
+
+/* Full-viewport backdrop */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  /* Backdrop blur for depth */
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  /* Animation */
+  animation: fadeIn var(--transition-normal) ease-out;
+}
+
+/* Hidden state (managed by app.js via the `hidden` attribute) */
+.modal-overlay[hidden] { display: none; }
+
+/* Modal container */
+.modal-container {
+  position: relative;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-modal);
+  width: 100%;
+  max-width: 860px;
+  max-height: calc(100dvh - 2 * var(--space-4));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: slideUp var(--transition-slow) ease-out;
+}
+
+/* Close button — absolutely positioned top-right */
+.modal-close {
+  position: sticky;
+  float: right;
+  top: var(--space-4);
+  right: 0;
+  margin: var(--space-4) var(--space-4) calc(-1 * var(--space-4) - 40px) 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  z-index: 10;
+  transition: background var(--transition-fast), color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+.modal-close svg { width: 18px; height: 18px; }
+.modal-close:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   16. MODAL CONTENT LAYOUT
+═══════════════════════════════════════════════════════════════ */
+.modal-content {
+  padding: var(--space-6);
+}
+
+/* Top section: cover art + primary metadata side by side */
+.modal-top {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+/* Modal cover image */
+.modal-cover-wrap {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  aspect-ratio: 2 / 3;
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+}
+.modal-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+/* Right side metadata column */
+.modal-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Title block */
+.modal-title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+.modal-alt-title {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* Author row */
+.modal-author {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.modal-author strong { color: var(--text-primary); font-weight: var(--weight-medium); }
+
+/* Badges row (type + status) */
+.modal-badges {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Rating stars (large, in modal) */
+.modal-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.modal-stars {
+  display: flex;
+  gap: 2px;
+  font-size: var(--text-md);
+}
+.modal-rating-value {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--star-fill);
+}
+.modal-rating-max {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* Progress bar */
+.modal-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.modal-progress-label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+}
+.modal-progress-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  border: none;
+  background: var(--bg-elevated);
+  /* Style the filled portion — vendor-prefixed for cross-browser support */
+  accent-color: var(--accent);
+  cursor: default;
+}
+/* WebKit/Blink inner track */
+.modal-progress-bar::-webkit-progress-bar   { background: var(--bg-elevated); border-radius: 3px; }
+.modal-progress-bar::-webkit-progress-value { background: linear-gradient(90deg, var(--accent), var(--accent-hover)); border-radius: 3px; }
+/* Firefox inner bar */
+.modal-progress-bar::-moz-progress-bar      { background: linear-gradient(90deg, var(--accent), var(--accent-hover)); border-radius: 3px; }
+
+/* Dates row */
+.modal-dates {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.modal-date-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.modal-date-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.modal-date-value {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
+}
+
+/* Genre tags (in modal) */
+.modal-genre-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.modal-genre-tag {
+  padding: 3px var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/* ── Long-form text sections ── */
+.modal-section {
+  margin-bottom: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+.modal-section-title {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.modal-section-text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+/* Notes use a different visual treatment (like a sticky note) */
+.modal-notes {
+  background: var(--bg-elevated);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   17. ANIMATIONS & TRANSITIONS
+═══════════════════════════════════════════════════════════════ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Card entrance animation — driven by app.js via Web Animations API
+   to stay CSP-compliant (no inline animation-delay style attribute). */
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* Note: The animation is NOT applied via CSS animation property here;
+   it is applied programmatically via element.animate() in app.js. */
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   18. RESPONSIVE BREAKPOINTS
+   Tablet: ≤ 900 px  |  Mobile: ≤ 600 px
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Tablet (≤ 900 px) ── */
+@media (max-width: 900px) {
+  :root {
+    --sidebar-width: 200px;
+    --card-min-width: 140px;
+  }
+
+  .brand-name { font-size: var(--text-md); }
+}
+
+/* ── Tablet/mobile breakpoint (≤ 768 px) ── */
+@media (max-width: 768px) {
+  :root {
+    --header-height: 56px;
+  }
+
+  /* Sidebar becomes a collapsible full-width panel below the header */
+  .filter-panel {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    height: auto;
+    max-height: calc(100dvh - var(--header-height) - 80px);
+    z-index: 50;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    /* Hidden by default on mobile */
+    transform: translateY(-110%);
+    transition: transform var(--transition-normal);
+    overflow-y: auto;
+  }
+
+  /* Panel is visible when aria-expanded="true" is set on the toggle */
+  .filter-panel.is-open {
+    transform: translateY(0);
+  }
+
+  /* Full width for the main content since no sidebar */
+  .app-layout { display: block; }
+  .main-content { width: 100%; }
+}
+
+/* ── Mobile (≤ 600 px) ── */
+@media (max-width: 600px) {
+  :root {
+    --card-min-width: 130px;
+    --space-5: 16px;
+  }
+
+  .header-inner { padding: 0 var(--space-3); gap: var(--space-3); }
+
+  .search-wrapper { max-width: unset; }
+
+  /* Slightly tighter modal on small screens */
+  .modal-container {
+    border-radius: var(--radius-lg);
+    max-height: 95dvh;
+  }
+
+  .modal-content { padding: var(--space-4); }
+
+  /* Stack modal top section vertically on phones */
+  .modal-top {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-cover-wrap {
+    /* Shorter crop in single-column layout */
+    aspect-ratio: 16 / 9;
+  }
+  .modal-cover { object-position: center 20%; }
+
+  .media-grid { padding: var(--space-3); gap: var(--space-3); }
+}
+
+/* ── Large screens (≥ 1400 px) — widen grid columns ── */
+@media (min-width: 1400px) {
+  :root { --card-min-width: 180px; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   19. BUG FIX — Empty stars (§ 11 addition)
+═══════════════════════════════════════════════════════════════ */
+.rating-star-empty { color: var(--star-empty); }
+
+/* ═══════════════════════════════════════════════════════════════
+   20. HEADER ACTION BUTTONS
+═══════════════════════════════════════════════════════════════ */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.btn-add {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--accent);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: #fff;
+  transition: background var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-add:hover { background: var(--accent-hover); }
+.btn-add svg { width: 16px; height: 16px; }
+
+/* Larger variant for the empty-library call-to-action */
+.btn-add--large {
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+}
+.btn-add--large svg { width: 20px; height: 20px; }
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast),
+              border-color var(--transition-fast);
+  flex-shrink: 0;
+}
+.btn-icon svg { width: 18px; height: 18px; }
+.btn-icon:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* Label shown next to icon (visible on mobile filter toggle) */
+.btn-icon-label { font-size: var(--text-sm); font-weight: var(--weight-medium); }
+
+/* On mobile, the filter toggle shows its label; other icon-buttons don't */
+#filter-toggle { width: auto; padding: var(--space-2) var(--space-3); gap: var(--space-2); }
+
+/* ═══════════════════════════════════════════════════════════════
+   21. SHARED ACTION BUTTONS (used in modals & forms)
+═══════════════════════════════════════════════════════════════ */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  transition: background var(--transition-fast);
+}
+.btn-primary:hover { background: var(--accent-hover); }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.btn-secondary:hover {
+  background: var(--bg-primary);
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+.btn-secondary svg { width: 16px; height: 16px; }
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  transition: background var(--transition-fast), color var(--transition-fast);
+  margin-left: auto;
+}
+.btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-danger svg { width: 16px; height: 16px; }
+
+/* ── Edit / Delete action row in detail modal ── */
+.modal-actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+/* ── Delete confirmation inline block ── */
+.delete-confirm {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: rgba(232, 80, 80, 0.08);
+  border: 1px solid rgba(232, 80, 80, 0.3);
+}
+.delete-confirm-msg {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-3);
+}
+.delete-confirm-msg strong { color: var(--text-primary); }
+.delete-confirm-btns {
+  display: flex;
+  gap: var(--space-3);
+}
+.delete-confirm-btns .btn-danger { margin-left: 0; }
+
+/* ── Small progress bar on card (list view) ── */
+.card-progress-bar {
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  border: none;
+  background: var(--bg-elevated);
+  accent-color: var(--accent);
+  margin-top: var(--space-1);
+  display: block;
+}
+.card-progress-bar::-webkit-progress-bar   { background: var(--bg-elevated); border-radius: 2px; }
+.card-progress-bar::-webkit-progress-value { background: var(--accent); border-radius: 2px; }
+.card-progress-bar::-moz-progress-bar      { background: var(--accent); border-radius: 2px; }
+
+/* ── Cover placeholder for entries with no cover image ── */
+.card-cover-placeholder,
+.modal-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+}
+.card-cover-placeholder svg { width: 48px; height: 64px; }
+.modal-cover-placeholder svg { width: 60px; height: 80px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   22. LIGHT THEME
+═══════════════════════════════════════════════════════════════ */
+body.theme-light {
+  --bg-primary:    #f0f2f7;
+  --bg-secondary:  #ffffff;
+  --bg-elevated:   #e4e8f0;
+  --bg-overlay:    rgba(0, 0, 0, 0.45);
+  --border:        #d0d5e2;
+  --border-focus:  #4a80d4;
+  --text-primary:  #1a1e2e;
+  --text-secondary:#4a5270;
+  --text-muted:    #8890a8;
+  --star-empty:    #c8cce0;
+  --shadow-card:   0 2px 12px rgba(0, 0, 0, 0.12);
+  --shadow-modal:  0 8px 48px rgba(0, 0, 0, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   23. LIST VIEW
+═══════════════════════════════════════════════════════════════ */
+.view-list .media-grid {
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+}
+
+.view-list .media-card {
+  flex-direction: row;
+  align-items: stretch;
+  height: 84px;
+  border-radius: var(--radius-md);
+  will-change: auto; /* reset for list rows */
+}
+
+.view-list .media-card:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-card);
+}
+
+.view-list .card-cover-wrap {
+  width: 56px;
+  flex-shrink: 0;
+  aspect-ratio: unset;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.view-list .card-info {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  flex: 1;
+  min-width: 0;
+}
+
+.view-list .card-title {
+  min-width: 0;
+  flex: 2;
+  max-width: 300px;
+  -webkit-line-clamp: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block; /* override -webkit-box */
+}
+
+.view-list .card-author {
+  flex: 1;
+  min-width: 0;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.view-list .card-genres {
+  flex-wrap: nowrap;
+  overflow: hidden;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.view-list .card-progress-bar { display: none; }
+
+.view-list .card-meta {
+  margin-left: auto;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.view-list .status-dot { top: var(--space-1); right: var(--space-1); }
+
+/* ═══════════════════════════════════════════════════════════════
+   24. CARD SIZE VARIANTS
+═══════════════════════════════════════════════════════════════ */
+/* Grid view card sizes */
+body.card-tiny     { --card-min-width: 100px; }
+body.card-small    { --card-min-width: 130px; }
+body.card-compact  { --card-min-width: 145px; }
+/* normal = default 160px */
+body.card-large    { --card-min-width: 190px; }
+body.card-spacious { --card-min-width: 220px; }
+
+/* List view card sizes — affect row height and cover width */
+body.card-tiny.view-list     .media-card { height: 52px; }
+body.card-tiny.view-list     .card-cover-wrap { width: 36px; }
+body.card-small.view-list    .media-card { height: 68px; }
+body.card-small.view-list    .card-cover-wrap { width: 46px; }
+body.card-compact.view-list  .media-card { height: 76px; }
+body.card-compact.view-list  .card-cover-wrap { width: 52px; }
+/* normal = default 84px / 56px */
+body.card-large.view-list    .media-card { height: 100px; }
+body.card-large.view-list    .card-cover-wrap { width: 68px; }
+body.card-spacious.view-list .media-card { height: 120px; }
+body.card-spacious.view-list .card-cover-wrap { width: 80px; }
+
+.card-size-row { flex-wrap: wrap; }
+
+/* ═══════════════════════════════════════════════════════════════
+   25. FORM MODAL
+═══════════════════════════════════════════════════════════════ */
+.form-modal-container {
+  max-width: 720px;
+}
+.password-modal-container {
+  max-width: 420px;
+}
+
+.media-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.form-heading {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.form-group--full { grid-column: 1 / -1; }
+
+.form-group label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.required-star { color: var(--danger); margin-left: 1px; }
+.form-hint     { text-transform: none; letter-spacing: 0; font-weight: var(--weight-regular); }
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+.form-input::placeholder,
+.form-textarea::placeholder { color: var(--text-muted); }
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.6;
+}
+
+.form-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolyline points='6 9 12 15 18 9' fill='none' stroke='%234a80d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-2) center;
+  background-size: 16px;
+  padding-right: 28px;
+  cursor: pointer;
+}
+.form-select option { background: var(--bg-secondary); }
+.form-select:hover { border-color: var(--accent); }
+
+/* Rating range slider — uses explicit track + thumb pseudo-elements
+   so the thumb is always vertically centred on the 4px track. */
+.form-range {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 22px;           /* tall enough to contain the 18px thumb */
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+  margin: var(--space-1) 0;
+}
+/* Webkit track */
+.form-range::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-elevated);
+}
+/* Webkit thumb — margin-top centres the 18px thumb on the 4px track */
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg-secondary);
+  box-shadow: 0 0 0 2px var(--accent);
+  cursor: pointer;
+  margin-top: -7px;       /* (4 - 18) / 2 = -7px */
+  transition: transform var(--transition-fast);
+}
+.form-range::-webkit-slider-thumb:hover  { transform: scale(1.2); }
+/* Firefox track */
+.form-range::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-elevated);
+  border: none;
+}
+/* Firefox thumb — auto-centred on track by default */
+.form-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg-secondary);
+  box-shadow: 0 0 0 2px var(--accent);
+  cursor: pointer;
+}
+
+.form-rating-display {
+  color: var(--star-fill);
+  font-size: var(--text-md);
+}
+
+.form-error-msg {
+  font-size: var(--text-sm);
+  color: var(--danger);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(232, 80, 80, 0.08);
+  border: 1px solid rgba(232, 80, 80, 0.3);
+  border-radius: var(--radius-md);
+}
+.form-error-msg[hidden] { display: none; }
+
+.form-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   26. SETTINGS DRAWER
+═══════════════════════════════════════════════════════════════ */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.settings-overlay[hidden] { display: none; }
+
+.settings-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(380px, 100vw);
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  box-shadow: -4px 0 32px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: slideInRight var(--transition-normal) ease-out;
+  z-index: 301;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0);    }
+}
+
+.settings-head {
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 1;
+}
+.settings-title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+.settings-body {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  flex: 1;
+}
+.settings-section { display: flex; flex-direction: column; gap: var(--space-3); }
+.settings-section-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Segmented toggle row */
+.settings-toggle-row {
+  display: flex;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 3px;
+}
+.settings-toggle {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: calc(var(--radius-md) - 2px);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+.settings-toggle svg { width: 14px; height: 14px; flex-shrink: 0; }
+.settings-toggle.active {
+  background: var(--accent);
+  color: #fff;
+}
+.settings-toggle:not(.active):hover { color: var(--text-primary); }
+
+/* Colour picker row */
+.settings-color-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.settings-color-input {
+  width: 48px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  background: none;
+  padding: 2px;
+  flex-shrink: 0;
+  transition: border-color var(--transition-fast);
+}
+.settings-color-input:focus { border-color: var(--border-focus); outline: none; }
+.settings-color-preview {
+  flex: 1;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-medium);
+  color: #fff;
+  letter-spacing: 0.04em;
+  transition: background var(--transition-fast);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.settings-reset-btn {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  flex-shrink: 0;
+}
+.settings-reset-btn:hover { color: var(--text-secondary); }
+.settings-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Data management buttons */
+.settings-data-btns {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.settings-data-btn {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+.settings-data-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.settings-data-btn:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.settings-danger-btn { border-color: rgba(232, 80, 80, 0.3); color: var(--danger); }
+.settings-danger-btn:hover {
+  background: rgba(232, 80, 80, 0.1);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   27. TOAST NOTIFICATIONS
+═══════════════════════════════════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%) translateY(140%);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-card);
+  z-index: 500;
+  transition: transform var(--transition-normal);
+  max-width: min(380px, calc(100vw - 32px));
+  text-align: center;
+  pointer-events: none;
+}
+.toast--show  { transform: translateX(-50%) translateY(0); }
+.toast--success { border-color: var(--success); color: var(--success); }
+.toast--error   { border-color: var(--danger);  color: var(--danger);  }
+.toast--info    { border-color: var(--accent);  color: var(--text-secondary); }
+
+/* ── Settings tabs ── */
+.settings-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-1);
+}
+.settings-tab {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+  text-align: center;
+}
+.settings-tab:hover { color: var(--text-primary); }
+.settings-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.settings-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ── Library tag list ── */
+.library-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-height: 32px;
+}
+.library-tag-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px var(--space-2) 3px var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+}
+.library-tag-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.library-tag-remove:hover {
+  background: rgba(232, 80, 80, 0.15);
+  color: var(--danger);
+}
+.library-add-row {
+  display: flex;
+  gap: var(--space-2);
+}
+.library-add-input { flex: 1; }
+.library-add-btn {
+  padding: var(--space-2) var(--space-4);
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+.library-add-btn:hover { background: var(--accent-hover); }
+
+/* ── Settings body gap update ── */
+.settings-body { gap: 0; }
+.settings-tab-panel { padding-top: var(--space-5); }
+
+/* ── Cover image upload — preview renders inside the upload box ── */
+.cover-upload-label {
+  display: block;
+  cursor: pointer;
+}
+.cover-upload-area {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  overflow: hidden;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+.cover-upload-label:hover .cover-upload-area {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* Prompt (icon + text) — only visible when no image is loaded */
+.cover-upload-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  pointer-events: none;
+}
+/* Preview image — lives inside the upload box */
+.cover-preview-inner {
+  display: none;
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: calc(var(--radius-md) - 2px);
+}
+/* When an image is selected / already present */
+.cover-upload-area.has-image {
+  padding: 0;
+  border-style: solid;
+  border-color: var(--accent);
+}
+.cover-upload-area.has-image .cover-upload-prompt { display: none; }
+.cover-upload-area.has-image .cover-preview-inner  { display: block; }
+/* Remove button sits below the upload box */
+.cover-remove-btn {
+  display: block;
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: rgba(232, 80, 80, 0.12);
+  border: 1px solid rgba(232, 80, 80, 0.4);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.cover-remove-btn:hover { background: rgba(232, 80, 80, 0.25); }
+
+/* ═══════════════════════════════════════════════════════════════
+   28.5. CUSTOM DATE PICKER
+   Themed calendar dropdown replacing native <input type="date">.
+═══════════════════════════════════════════════════════════════ */
+.bingery-datepicker {
+  position: relative;
+  width: 100%;
+}
+.bingery-dp-trigger {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  padding-right: 34px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  text-align: left;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.bingery-dp-trigger:hover { border-color: var(--accent); }
+.bingery-dp-trigger:focus {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+.bingery-dp-value { flex: 1; min-width: 0; }
+.bingery-dp-icon {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+  pointer-events: none;
+}
+.bingery-dp-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 400;
+  width: 280px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-modal);
+  padding: var(--space-3);
+}
+.bingery-dp-dropdown[hidden] { display: none; }
+.bingery-dp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+.bingery-dp-month {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+.bingery-dp-nav {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.bingery-dp-nav svg { width: 16px; height: 16px; }
+.bingery-dp-nav:hover {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+.bingery-dp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: var(--space-1);
+}
+.bingery-dp-wd {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+  padding: 2px 0;
+}
+.bingery-dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.bingery-dp-empty { aspect-ratio: 1; }
+.bingery-dp-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.bingery-dp-day:hover {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+.bingery-dp-day.is-today {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-weight: var(--weight-bold);
+}
+.bingery-dp-day.is-selected {
+  background: var(--accent);
+  color: #fff;
+  font-weight: var(--weight-bold);
+}
+.bingery-dp-footer {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+.bingery-dp-today-btn,
+.bingery-dp-clear-btn {
+  flex: 1;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.bingery-dp-today-btn {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+.bingery-dp-today-btn:hover { background: var(--accent); color: #fff; }
+.bingery-dp-clear-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.bingery-dp-clear-btn:hover { color: var(--danger); border-color: var(--danger); }
+
+/* ═══════════════════════════════════════════════════════════════
+   29. CUSTOM SELECT / DROPDOWN
+   Replaces every native <select> for consistent cross-browser
+   theming that matches the overall dark/light design.
+═══════════════════════════════════════════════════════════════ */
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+/* Trigger button — mimics .form-input / .sort-select appearance */
+.custom-select-btn {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  padding-right: 34px; /* room for the arrow */
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: left;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.custom-select-btn:hover  { border-color: var(--accent); }
+.custom-select-btn:focus  {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+.custom-select-val { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Chevron icon */
+.custom-select-arrow {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+  pointer-events: none;
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+.custom-select--open .custom-select-arrow { transform: translateY(-50%) rotate(180deg); }
+
+/* Options list */
+.custom-select-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 400;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-modal);
+  overflow-y: auto;
+  max-height: 220px;
+  list-style: none;
+  padding: 4px;
+}
+
+/* Individual option */
+.custom-select-opt {
+  padding: var(--space-2) var(--space-3);
+  border-radius: calc(var(--radius-md) - 2px);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.custom-select-opt:hover,
+.custom-select-opt:focus { background: var(--accent-subtle); color: var(--accent); outline: none; }
+.custom-select-opt.active { background: var(--accent); color: #fff; }
+
+/* ── Searchable select dropdown wrapper ── */
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 400;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+  max-height: 280px;
+}
+.custom-select-dropdown[hidden] { display: none; }
+.custom-select-dropdown .custom-select-list {
+  position: static;
+  border: none;
+  box-shadow: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  max-height: 220px;
+}
+.custom-select-search {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elevated);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  outline: none;
+}
+.custom-select-search::placeholder { color: var(--text-muted); }
+.custom-select-search:focus {
+  background: var(--bg-secondary);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* ── Custom scrollbars ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+* { scrollbar-width: thin; scrollbar-color: var(--border) var(--bg-primary); }
+
+/* ═══════════════════════════════════════════════════════════════
+   28. RESPONSIVE UPDATES FOR NEW ELEMENTS
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Tablet ── */
+@media (max-width: 900px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group--full { grid-column: 1; }
+}
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .header-actions { gap: var(--space-1); }
+  .btn-add span   { display: none; }           /* show icon only on very small screens */
+  .btn-add        { padding: var(--space-2); width: 36px; height: 36px; border-radius: var(--radius-md); justify-content: center; }
+  .btn-add svg    { width: 18px; height: 18px; }
+  #filter-toggle .btn-icon-label { display: none; }
+  #filter-toggle { width: 36px; height: 36px; padding: 0; justify-content: center; }
+
+  .view-list .card-info { gap: var(--space-2); }
+  .view-list .card-author { display: none; }
+  .view-list .card-genres { display: none; }
+}
+
+/* ── Reset confirmation (inside settings drawer) ── */
+.settings-reset-confirm {
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: rgba(232, 80, 80, 0.08);
+  border: 1px solid rgba(232, 80, 80, 0.3);
+}
+.settings-reset-confirm .btn-danger { margin-left: 0; }
+
+/* ═══════════════════════════════════════════════════════════════
+   30. THEMED CHECKBOXES & RADIO BUTTONS  (Task 3)
+   Custom-styled replacements for generic browser checkboxes and
+   radio buttons. Uses CSS-only approach with accent colour.
+═══════════════════════════════════════════════════════════════ */
+.bingery-checkbox,
+.bingery-radio {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  vertical-align: middle;
+  margin-right: var(--space-1);
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+.bingery-checkbox { border-radius: var(--radius-sm); }
+.bingery-radio    { border-radius: 50%; }
+.bingery-checkbox:checked,
+.bingery-radio:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+/* Checkmark for checkbox */
+.bingery-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px; top: 1px;
+  width: 6px; height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+/* Dot for radio */
+.bingery-radio:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px; top: 3px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #fff;
+}
+.bingery-checkbox:focus-visible,
+.bingery-radio:focus-visible {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+.bingery-checkbox:hover,
+.bingery-radio:hover {
+  border-color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   31. SPOILER CONTAINER  (Task 4)
+   Themed reveal section for personal reviews that may contain
+   spoilers. Uses the app's accent colour and smooth animation.
+═══════════════════════════════════════════════════════════════ */
+.spoiler-container {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.spoiler-toggle {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-elevated);
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  border: none;
+  text-align: left;
+}
+.spoiler-toggle:hover { background: var(--accent-subtle); }
+.spoiler-toggle svg { flex-shrink: 0; color: var(--accent); }
+.spoiler-toggle[aria-expanded="true"] {
+  border-bottom: 1px solid var(--border);
+}
+.spoiler-toggle[aria-expanded="true"] svg {
+  color: var(--success);
+}
+.spoiler-content {
+  padding: var(--space-4);
+  animation: fadeIn var(--transition-normal) ease-out;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   32. DATE INPUT STYLING  (Task 2)
+   Makes date inputs match the custom select dropdown appearance.
+═══════════════════════════════════════════════════════════════ */
+input[type="date"].form-input {
+  color-scheme: dark;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+input[type="date"].form-input:hover { border-color: var(--accent); }
+input[type="date"].form-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+body.theme-light input[type="date"].form-input { color-scheme: light; }
+/* Style the calendar picker icon */
+input[type="date"].form-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
+}
+input[type="date"].form-input:hover::-webkit-calendar-picker-indicator { opacity: 1; }
+body.theme-light input[type="date"].form-input::-webkit-calendar-picker-indicator { filter: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   33. FORM — LINKED ENTRIES  (Task 1)
+═══════════════════════════════════════════════════════════════ */
+.form-linked-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.form-linked-row .custom-select { flex: 1; min-width: 120px; }
+.form-linked-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  min-height: 0;
+}
+.form-linked-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.form-linked-relation {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+}
+.form-linked-remove {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--text-muted); line-height: 1;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.form-linked-remove:hover { background: rgba(232,80,80,0.15); color: var(--danger); }
+
+/* ═══════════════════════════════════════════════════════════════
+   34. FORM — EPISODE NOTES  (Task 8)
+═══════════════════════════════════════════════════════════════ */
+.form-ep-notes-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.form-ep-note-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.form-ep-note-num { width: 72px; flex-shrink: 0; }
+.form-ep-note-text { flex: 1; }
+.form-ep-note-remove {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: var(--text-muted); flex-shrink: 0;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.form-ep-note-remove:hover { background: rgba(232,80,80,0.15); color: var(--danger); }
+
+/* ═══════════════════════════════════════════════════════════════
+   35. FORM — SUB-RATINGS  (Task 17)
+═══════════════════════════════════════════════════════════════ */
+.form-subratings-fieldset {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+.form-subratings-legend {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  padding: 0 var(--space-2);
+}
+.form-subrating-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.form-subrating-row label {
+  min-width: 110px;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.form-subrating-range { flex: 1; }
+.form-subrating-val {
+  min-width: 28px;
+  text-align: right;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--star-fill);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   36. MODAL — SUB-RATINGS DISPLAY  (Task 17)
+═══════════════════════════════════════════════════════════════ */
+.modal-subratings-grid { display: flex; flex-direction: column; gap: var(--space-2); }
+.modal-subrating-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.modal-subrating-label {
+  min-width: 110px;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.modal-subrating-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-elevated);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.modal-subrating-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-radius: 3px;
+  transition: width var(--transition-normal);
+}
+.modal-subrating-val {
+  min-width: 24px;
+  text-align: right;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--star-fill);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   37. MODAL — EPISODE NOTES  (Task 8)
+═══════════════════════════════════════════════════════════════ */
+.modal-ep-notes-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.modal-ep-note-item {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+.modal-ep-note-num {
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.modal-ep-note-text { color: var(--text-secondary); }
+
+/* ═══════════════════════════════════════════════════════════════
+   38. MODAL — LINKED ENTRIES  (Task 1)
+═══════════════════════════════════════════════════════════════ */
+.modal-linked-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.modal-linked-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+.modal-linked-tag:hover {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+.modal-linked-relation {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   39. MODAL — REWATCH DISPLAY  (Task 5)
+═══════════════════════════════════════════════════════════════ */
+.modal-rewatch-dates {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   40. MODAL — TIME ESTIMATOR  (Task 10)
+═══════════════════════════════════════════════════════════════ */
+.modal-time-estimate {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--accent-subtle);
+  border: 1px solid rgba(74, 128, 212, 0.25);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  font-weight: var(--weight-medium);
+  margin-bottom: var(--space-4);
+}
+.modal-time-icon { font-size: var(--text-sm); }
+
+/* ═══════════════════════════════════════════════════════════════
+   41. COMPARISON VIEW  (Task 6)
+═══════════════════════════════════════════════════════════════ */
+.compare-selectors {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.compare-table th {
+  padding: var(--space-3);
+  color: var(--accent);
+  font-weight: var(--weight-bold);
+  border-bottom: 2px solid var(--accent);
+  text-align: center;
+}
+.compare-table th:nth-child(2) { width: 120px; }
+.compare-row td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+.compare-label {
+  text-align: center;
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.compare-val { text-align: center; color: var(--text-primary); }
+.compare-diff .compare-val { color: var(--warning); }
+
+/* ═══════════════════════════════════════════════════════════════
+   42. ROULETTE WHEEL  (Task 9)
+═══════════════════════════════════════════════════════════════ */
+/* ── Roulette wheel — actual spinning circle with coloured segments ── */
+.roulette-wheel-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: var(--space-6) 0;
+  position: relative;
+}
+/* Pointer arrow above the wheel */
+.roulette-pointer-top {
+  font-size: 28px;
+  color: var(--accent);
+  line-height: 1;
+  z-index: 2;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  margin-bottom: -8px;
+}
+.roulette-wheel {
+  width: 280px;
+  height: 280px;
+  border: 4px solid var(--border);
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 0 0 40px rgba(74, 128, 212, 0.15), inset 0 0 20px rgba(0,0,0,0.3);
+  /* Rotation is applied via JS transform */
+  transform-origin: center center;
+}
+/* Centre dot on the wheel */
+.roulette-center-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  background: var(--bg-secondary);
+  border: 3px solid var(--accent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+}
+/* Labels positioned around the wheel, radiating outward */
+.roulette-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 110px;
+  height: 0;
+  transform-origin: 0 0;
+  transform: rotate(var(--angle)) translateX(24px);
+  display: flex;
+  align-items: center;
+}
+.roulette-label span {
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.roulette-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.roulette-controls label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+/* ── Themed checkbox — shared by roulette bias toggle, spoiler toggle, etc. ── */
+.bingery-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.bingery-checkbox:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.bingery-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 4px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.bingery-checkbox:hover {
+  border-color: var(--accent);
+}
+/* Label wrapper for inline checkbox + text */
+.form-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.roulette-result {
+  text-align: center;
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.roulette-winner-title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+  margin-bottom: var(--space-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+.roulette-winner-meta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-3);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   43. STATISTICS  (Task 21)
+═══════════════════════════════════════════════════════════════ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+.stats-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-2);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 68px;
+}
+.stats-card-value {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+  line-height: 1.2;
+}
+.stats-card-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+  line-height: 1.2;
+}
+.stats-genre-bars { display: flex; flex-direction: column; gap: var(--space-2); }
+.stats-genre-row { display: flex; align-items: center; gap: var(--space-3); }
+.stats-genre-name { min-width: 100px; font-size: var(--text-xs); color: var(--text-secondary); text-align: right; }
+.stats-genre-bar-track { flex: 1; height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; }
+.stats-genre-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+.stats-genre-count { min-width: 28px; font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--text-primary); }
+.stats-rewatch-list { padding-left: var(--space-5); }
+.stats-rewatch-list li { font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-1); }
+
+/* Status breakdown bars — colour-coded to match status badge colours */
+.stats-status-bars { display: flex; flex-direction: column; gap: var(--space-2); }
+.stats-status-row { display: flex; align-items: center; gap: var(--space-3); }
+.stats-status-label { min-width: 100px; font-size: var(--text-xs); color: var(--text-secondary); text-align: right; }
+.stats-bar--completed   { background: var(--status-completed); }
+.stats-bar--in-progress { background: var(--status-in-progress); }
+.stats-bar--planned     { background: var(--status-planned); }
+.stats-bar--dropped     { background: var(--status-dropped); }
+
+/* Type distribution bars — colour-coded to match type badge colours */
+.stats-bar--type-anime   { background: var(--type-anime); }
+.stats-bar--type-manga   { background: var(--type-manga); }
+.stats-bar--type-manhwa  { background: var(--type-manhwa); }
+.stats-bar--type-manhua  { background: var(--type-manhua); }
+.stats-bar--type-book    { background: var(--type-book); }
+.stats-bar--type-movie   { background: var(--type-movie); }
+
+/* Rating distribution — vertical bar chart */
+.stats-rating-dist {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-1);
+  height: 100px;
+  padding-top: var(--space-2);
+}
+.stats-rating-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+.stats-rating-bar-wrap {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.stats-rating-bar {
+  width: 100%;
+  max-width: 32px;
+  background: var(--accent);
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+  transition: height var(--transition-normal);
+}
+.stats-rating-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: var(--weight-medium);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   44. ACTIVITY LOG  (Task 21)
+═══════════════════════════════════════════════════════════════ */
+.activity-log-list { display: flex; flex-direction: column; gap: 0; max-height: 400px; overflow-y: auto; }
+.activity-log-item {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-xs);
+}
+.activity-log-time { color: var(--text-muted); white-space: nowrap; min-width: 100px; }
+.activity-log-action { color: var(--text-secondary); }
+
+/* ═══════════════════════════════════════════════════════════════
+   45. RECOMMENDATIONS  (Task 7)
+═══════════════════════════════════════════════════════════════ */
+.rec-list { display: flex; flex-direction: column; gap: var(--space-2); list-style: none; padding: 0; margin: 0; }
+.rec-item {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+.rec-item:hover { border-color: var(--accent); }
+/* Numbered rank circle — shows the entry's position in the recommendation list */
+.rec-rank {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent-subtle);
+  border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+/* Match percentage — pushed to the right side of the rec item via margin-left: auto */
+.rec-match {
+  margin-left: auto;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+/* Explanation line — shows why this entry was recommended (e.g. "Genres: Action, Drama") */
+.rec-reason {
+  font-size: var(--text-xs);
+  color: var(--accent);
+  opacity: 0.8;
+  font-style: italic;
+}
+.rec-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.rec-title { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rec-meta { font-size: var(--text-xs); color: var(--text-muted); }
+
+/* ═══════════════════════════════════════════════════════════════
+   46. DUPLICATE MERGER  (Task 18)
+═══════════════════════════════════════════════════════════════ */
+.merge-pair {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+}
+.merge-entry { flex: 1; min-width: 150px; font-size: var(--text-sm); color: var(--text-secondary); }
+.merge-vs { font-weight: var(--weight-bold); color: var(--text-muted); font-size: var(--text-xs); }
+.merge-btn { flex-basis: 100%; margin-top: var(--space-2); }
+
+/* ═══════════════════════════════════════════════════════════════
+   47. SETTINGS TAB SPACING FIX  (Task 20)
+   Reduces the gap between the tab bar and the first section.
+═══════════════════════════════════════════════════════════════ */
+.settings-tabs {
+  margin-bottom: 0;
+}
+.settings-tab-panel {
+  padding-top: var(--space-3);
+}
+
+/* Custom detail fields in modal */
+.modal-custom-fields { display: flex; flex-direction: column; gap: var(--space-1); }
+.modal-custom-field { font-size: var(--text-sm); color: var(--text-secondary); }
+.modal-custom-key { font-weight: var(--weight-medium); color: var(--text-primary); }
+
+/* Time estimates settings grid */
+.settings-time-grid { display: flex; flex-direction: column; gap: var(--space-2); }
+.settings-time-row { display: flex; align-items: center; gap: var(--space-2); }
+.settings-time-label { min-width: 80px; font-size: var(--text-xs); color: var(--text-secondary); }
+.settings-time-input { width: 70px; text-align: center; padding: var(--space-1) var(--space-2); background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: var(--text-sm); color: var(--text-primary); }
+.settings-time-input:focus { border-color: var(--accent); outline: none; }
+.settings-time-unit { font-size: var(--text-xs); color: var(--text-muted); }
+
+/* ═══════════════════════════════════════════════════════════════
+   48. SETTINGS — TOOLS SECTION
+   New buttons row for the feature tools (stats, roulette, etc.)
+═══════════════════════════════════════════════════════════════ */
+.settings-tools-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+.settings-tools-grid .settings-data-btn {
+  font-size: var(--text-xs);
+  padding: var(--space-2) var(--space-3);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   49. EXPORT BUTTON DISABLED STATE  (Task 19)
+   When encryption is on, CSV/Markdown buttons are dimmed.
+═══════════════════════════════════════════════════════════════ */
+.settings-data-btn.disabled-export {
+  opacity: 0.35;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   50. FORM RANGE SLIDER STYLING
+   Matches the accent colour across browsers.
+═══════════════════════════════════════════════════════════════ */
+.form-range {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--bg-elevated);
+  border-radius: 2px;
+  outline: none;
+  accent-color: var(--accent);
+}
+.form-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg-secondary);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.form-range::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg-secondary);
+  cursor: pointer;
+}
+.form-range::-webkit-slider-runnable-track { height: 4px; background: var(--bg-elevated); border-radius: 2px; }
+.form-range::-moz-range-track { height: 4px; background: var(--bg-elevated); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   52. KEYBOARD SHORTCUTS DISPLAY  (Task 21)
+═══════════════════════════════════════════════════════════════ */
+.settings-shortcuts-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.shortcut-row kbd {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  font-weight: var(--weight-medium);
+  min-width: 70px;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   51. RESPONSIVE UPDATES FOR NEW FEATURES
+═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .compare-selectors { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .roulette-wheel { width: 220px; height: 220px; }
+  .roulette-label span { font-size: 7px; }
+  .roulette-label { width: 80px; }
+  .settings-tools-grid { grid-template-columns: 1fr; }
+  .form-subrating-row { flex-wrap: wrap; }
+  .form-subrating-row label { min-width: 100%; }
+  /* Date picker — force full-width on mobile so it doesn't overflow the
+     viewport edge when the form is near the right side of the screen */
+  .bingery-dp-dropdown { left: 0; right: auto; min-width: unset; width: 100%; }
+  /* Recommendation list items — tighter spacing on narrow screens */
+  .rec-item { padding: var(--space-2); gap: var(--space-2); }
+  .rec-match { font-size: var(--text-xs); }
+  /* Custom fields in modal — reduce gap on mobile */
+  .modal-custom-fields { gap: var(--space-2); }
+  /* Tools drawer — expand to full screen width on mobile
+     (mirrors the settings-drawer behavior on small viewports) */
+  .tools-drawer { width: 100%; max-width: 100%; }
+}
+@media (max-width: 600px) {
+  .merge-pair { flex-direction: column; text-align: center; }
+  .modal-ep-note-item { flex-direction: column; gap: var(--space-1); }
+  .form-linked-row { flex-direction: column; }
+  /* Hide percentage badge on very small cards to avoid overflow */
+  .card-pct-badge { display: none; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  /* Stack time estimates on small screens */
+  .settings-time-row { flex-wrap: wrap; }
+  .settings-time-label { min-width: 60px; }
+  .settings-time-input { width: 60px; }
+  /* Bulk toolbar stacks vertically on mobile */
+  .bulk-toolbar { flex-wrap: wrap; padding: var(--space-2) var(--space-3); gap: var(--space-2); }
+  .bulk-toolbar-actions { flex-wrap: wrap; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   60. CARD HOVER EFFECT VARIANTS
+   Controlled by body.hover-* classes set from settings.
+═══════════════════════════════════════════════════════════════ */
+/* Lift is the default — already defined in § 11 */
+/* Glow: accent-coloured box-shadow, no lift */
+body.hover-glow .media-card:hover {
+  transform: none;
+  box-shadow: 0 0 20px var(--accent-subtle), 0 0 40px var(--accent-subtle);
+  border-color: var(--accent);
+}
+body.hover-glow .media-card:hover .card-cover { transform: none; filter: none; }
+body.hover-glow.view-list .media-card:hover { transform: none; }
+/* Border: border-colour highlight only */
+body.hover-border .media-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-card);
+  border-color: var(--accent);
+}
+body.hover-border .media-card:hover .card-cover { transform: none; filter: none; }
+body.hover-border.view-list .media-card:hover { transform: none; }
+/* None: no hover effects at all */
+body.hover-none .media-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-card);
+  border-color: var(--border);
+}
+body.hover-none .media-card:hover .card-cover { transform: none; filter: none; }
+body.hover-none .card-hover-overlay { display: none; }
+body.hover-none.view-list .media-card:hover { transform: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   61. CARD INFO DENSITY — hide elements via body class
+   Each body.hide-card-* class is toggled from settings.cardInfo
+   in applySettings(). This lets users declutter their card layout
+   by hiding non-essential metadata (author, rating, status, progress).
+═══════════════════════════════════════════════════════════════ */
+body.hide-card-author   .card-author       { display: none; }
+body.hide-card-rating   .card-rating       { display: none; }
+body.hide-card-status   .status-dot        { display: none; }
+body.hide-card-progress .card-progress-bar { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   62. SIDEBAR POSITION — right variant
+   Reverses the flex direction of the app layout so the filter
+   panel appears on the right side instead of the left. The border
+   is moved from the right edge to the left edge to match.
+═══════════════════════════════════════════════════════════════ */
+body.sidebar-right .app-layout { flex-direction: row-reverse; }
+body.sidebar-right .filter-panel {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   63. HEADER STYLE VARIANTS
+   "compact" — reduces header height from 64px to 48px, tightens
+     text and padding to save vertical space.
+   "auto-hide" — pairs with a scroll listener in app.js that
+     adds .header-hidden when the user scrolls down, sliding the
+     header off-screen, and removes it when scrolling back up.
+═══════════════════════════════════════════════════════════════ */
+body.header-compact { --header-height: 48px; }
+body.header-compact .brand-name { font-size: var(--text-sm); }
+body.header-compact .header-actions button,
+body.header-compact .header-actions .add-btn { padding: var(--space-1) var(--space-2); }
+body.header-autohide .header {
+  transition: transform var(--transition-normal);
+}
+body.header-autohide .header.header-hidden {
+  transform: translateY(-100%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   64. GRID GAP — uses --grid-gap custom property
+═══════════════════════════════════════════════════════════════ */
+.media-grid { gap: var(--grid-gap, 16px); }
+
+/* ═══════════════════════════════════════════════════════════════
+   65. RECOMMENDATION TITLE OVERFLOW FIX
+   Long titles, genre metadata, and reason strings were leaking
+   outside the rec-item card boundary. Adding overflow:hidden
+   to the flex container and ellipsis to text children ensures
+   everything stays within bounds (see screenshot bug report).
+═══════════════════════════════════════════════════════════════ */
+.rec-item { overflow: hidden; }
+.rec-info { overflow: hidden; }
+.rec-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rec-reason { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ═══════════════════════════════════════════════════════════════
+   66. THEME PRESET SWATCHES (in settings)
+═══════════════════════════════════════════════════════════════ */
+.theme-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.theme-preset-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-1);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: none;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  min-width: 52px;
+}
+.theme-preset-swatch:hover { border-color: var(--text-secondary); }
+.theme-preset-swatch.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-subtle);
+}
+.theme-preset-swatch .swatch-colors {
+  display: flex;
+  width: 36px;
+  height: 18px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.theme-preset-swatch .swatch-colors span {
+  flex: 1;
+}
+.theme-preset-swatch .swatch-label {
+  font-size: 9px;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.theme-preset-swatch.active .swatch-label { color: var(--accent); }
+
+/* ═══════════════════════════════════════════════════════════════
+   67. CUSTOM BG / STATUS / TYPE COLOUR ROWS
+═══════════════════════════════════════════════════════════════ */
+.settings-color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+.settings-color-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.settings-color-item label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  min-width: 50px;
+}
+.settings-color-item input[type="color"] {
+  width: 32px;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1px;
+  cursor: pointer;
+  background: var(--bg-elevated);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   68. CARD INFO DENSITY CHECKBOXES (in settings)
+═══════════════════════════════════════════════════════════════ */
+.settings-checkbox-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.settings-checkbox-grid label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   69. CUSTOM CSS TEXTAREA (in settings)
+═══════════════════════════════════════════════════════════════ */
+.custom-css-textarea {
+  width: 100%;
+  min-height: 100px;
+  max-height: 300px;
+  resize: vertical;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  line-height: 1.5;
+  tab-size: 2;
+}
+.custom-css-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   70. THEME IMPORT/EXPORT BUTTONS (in settings)
+═══════════════════════════════════════════════════════════════ */
+.settings-theme-io {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   71. GLOBAL TRANSITIONS
+   Ensures all interactive elements (buttons, inputs, chips, badges,
+   modals, etc.) use the --transition-* CSS tokens so the Animation
+   Speed setting in Settings applies everywhere consistently. This
+   adds smooth transitions to all state changes by default.
+═══════════════════════════════════════════════════════════════ */
+a, button, input, select, textarea {
+  transition: background var(--transition-fast), color var(--transition-fast),
+              border-color var(--transition-fast), box-shadow var(--transition-fast),
+              opacity var(--transition-fast);
+}
+.chip, .settings-toggle, .btn-primary, .btn-secondary, .btn-danger,
+.settings-data-btn, .type-badge, .status-badge, .genre-tag, .modal-genre-tag {
+  transition: background var(--transition-fast), color var(--transition-fast),
+              border-color var(--transition-fast), box-shadow var(--transition-fast),
+              transform var(--transition-fast);
+}
+.filter-panel, .settings-drawer, .modal-overlay, .form-overlay, .toast {
+  transition: transform var(--transition-normal), opacity var(--transition-normal);
+}
+
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       SKIP NAVIGATION LINK (accessibility)
+  ═══════════════════════════════════════════ -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ═══════════════════════════════════════════
+       HEADER — Logo, search bar, actions
+  ═══════════════════════════════════════════ -->
+  <header class="site-header" role="banner">
+    <div class="header-inner">
+
+      <!-- Branding -->
+      <div class="brand" aria-label="Bingery home">
+        <svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <rect x="2" y="4" width="28" height="24" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M10 10 L22 16 L10 22 Z" fill="currentColor"/>
+        </svg>
+        <span class="brand-name">Bingery</span>
+      </div>
+
+      <!-- Live search input -->
+      <div class="search-wrapper" role="search">
+        <label for="search-input" class="visually-hidden">Search media</label>
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+          <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <input
+          id="search-input"
+          type="search"
+          class="search-input"
+          placeholder="Search titles, authors, notes…"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Search media library"
+        />
+        <button id="search-clear" class="search-clear" aria-label="Clear search" hidden>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Header action buttons -->
+      <div class="header-actions">
+        <!-- Filter toggle (mobile) -->
+        <button
+          id="filter-toggle"
+          class="filter-toggle btn-icon"
+          aria-expanded="false"
+          aria-controls="filter-panel"
+          aria-label="Toggle filters"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="10" y1="18" x2="14" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="btn-icon-label">Filters</span>
+        </button>
+
+        <!-- Add new entry -->
+        <button id="add-btn" class="btn-add" aria-label="Add new entry">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          <span>Add</span>
+        </button>
+
+        <!-- Tools menu -->
+        <button id="tools-btn" class="btn-icon" aria-label="Open tools" aria-haspopup="dialog">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <!-- Settings -->
+        <button id="settings-btn" class="btn-icon" aria-label="Open settings" aria-haspopup="dialog">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════
+       MAIN LAYOUT — sidebar + content area
+  ═══════════════════════════════════════════ -->
+  <div class="app-layout">
+
+    <!-- ─── FILTER SIDEBAR ─── -->
+    <aside
+      id="filter-panel"
+      class="filter-panel"
+      aria-label="Filter and sort controls"
+    >
+
+      <section class="filter-section" aria-labelledby="filter-type-label">
+        <h2 id="filter-type-label" class="filter-label">Type</h2>
+        <div class="filter-chips" role="group" aria-labelledby="filter-type-label" id="type-filter-group">
+        </div>
+      </section>
+
+      <section class="filter-section" aria-labelledby="filter-genre-label">
+        <h2 id="filter-genre-label" class="filter-label">Genre</h2>
+        <div class="filter-chips genre-chips" role="group" aria-labelledby="filter-genre-label" id="genre-filter-group">
+        </div>
+      </section>
+
+      <section class="filter-section" aria-labelledby="filter-status-label">
+        <h2 id="filter-status-label" class="filter-label">Status</h2>
+        <div class="filter-chips" role="group" aria-labelledby="filter-status-label" id="status-filter-group">
+        </div>
+      </section>
+
+      <section class="filter-section" aria-labelledby="sort-label">
+        <h2 id="sort-label" class="filter-label">Sort by</h2>
+        <div class="sort-select-wrapper">
+          <div class="custom-select" id="sort-select-wrap">
+            <button type="button" class="custom-select-btn" id="sort-select-btn"
+              aria-haspopup="listbox" aria-expanded="false"
+              aria-controls="sort-select-list" aria-labelledby="sort-label sort-select-btn">
+              <span class="custom-select-val">Date Added</span>
+              <svg class="custom-select-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <ul class="custom-select-list" role="listbox" id="sort-select-list" aria-labelledby="sort-label" hidden aria-hidden="true">
+              <li class="custom-select-opt active" role="option" data-value="dateAdded" aria-selected="true" tabindex="-1">Date Added</li>
+              <li class="custom-select-opt" role="option" data-value="rating" aria-selected="false" tabindex="-1">Highest Rating</li>
+              <li class="custom-select-opt" role="option" data-value="title" aria-selected="false" tabindex="-1">Title (A–Z)</li>
+              <li class="custom-select-opt" role="option" data-value="title-desc" aria-selected="false" tabindex="-1">Title (Z–A)</li>
+              <li class="custom-select-opt" role="option" data-value="progress" aria-selected="false" tabindex="-1">Progress</li>
+            </ul>
+            <!-- Hidden native select retained so dom.sortSelect / handleSortChange keep working -->
+            <select id="sort-select" class="visually-hidden" aria-hidden="true" tabindex="-1">
+              <option value="dateAdded" selected>Date Added</option>
+              <option value="rating">Highest Rating</option>
+              <option value="title">Title (A–Z)</option>
+              <option value="title-desc">Title (Z–A)</option>
+              <option value="progress">Progress</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <button id="reset-filters" class="reset-btn" aria-label="Reset all filters and sorting">
+        Reset Filters
+      </button>
+
+    </aside>
+
+    <!-- ─── MAIN CONTENT AREA ─── -->
+    <main id="main-content" class="main-content" role="main">
+
+      <!-- Stats bar -->
+      <div class="stats-bar" aria-live="polite" aria-atomic="true">
+        <div class="stats-bar-left">
+          <span id="results-count" class="results-count">Loading…</span>
+          <button type="button" class="btn-secondary bulk-select-btn" id="bulk-select-btn" aria-pressed="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Select
+          </button>
+        </div>
+        <div class="stats-meta" id="stats-meta" aria-hidden="true">
+        </div>
+      </div>
+      <!-- Bulk select action toolbar (hidden until select mode active) -->
+      <div class="bulk-toolbar" id="bulk-toolbar" hidden>
+        <span class="bulk-toolbar-count" id="bulk-toolbar-count">0 selected</span>
+        <div class="bulk-toolbar-actions">
+          <button type="button" class="btn-secondary" id="bulk-status-btn">Change Status</button>
+          <button type="button" class="btn-secondary" id="bulk-type-btn">Change Type</button>
+          <button type="button" class="btn-danger" id="bulk-delete-btn">Delete</button>
+        </div>
+        <button type="button" class="btn-secondary" id="bulk-cancel-btn">Cancel</button>
+      </div>
+
+      <!-- Media grid -->
+      <div
+        id="media-grid"
+        class="media-grid"
+        role="list"
+        aria-label="Media library"
+        aria-busy="true"
+      >
+        <div class="loading-state" aria-label="Loading media library" role="status">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" class="spinner" aria-hidden="true">
+            <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="31.4 94.2" stroke-linecap="round"/>
+          </svg>
+          <p>Loading library…</p>
+        </div>
+      </div>
+
+      <!-- Empty library state (no entries at all) -->
+      <div id="empty-library-state" class="empty-state" hidden aria-live="polite">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <rect x="8" y="12" width="48" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="2"/>
+          <line x1="32" y1="26" x2="32" y2="42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="24" y1="34" x2="40" y2="34" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p class="empty-title">Your library is empty</p>
+        <p class="empty-sub">Start building your collection by adding your first entry.</p>
+        <button id="empty-library-add" class="btn-add btn-add--large">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          <span>Add First Entry</span>
+        </button>
+      </div>
+
+      <!-- Empty state (filters produce no results) -->
+      <div id="empty-state" class="empty-state" hidden aria-live="polite">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <rect x="8" y="12" width="48" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="2"/>
+          <line x1="16" y1="24" x2="48" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="16" y1="32" x2="36" y2="32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="46" cy="46" r="12" fill="var(--bg-primary)"/>
+          <line x1="40" y1="52" x2="52" y2="40" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="40" y1="40" x2="52" y2="52" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p class="empty-title">No results found</p>
+        <p class="empty-sub">Try adjusting your filters or search query.</p>
+        <button id="empty-reset" class="reset-btn">Clear All Filters</button>
+      </div>
+
+      <!-- Error state -->
+      <div id="error-state" class="error-state" hidden role="alert">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" stroke-width="2"/>
+          <line x1="32" y1="20" x2="32" y2="36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="45" r="2.5" fill="currentColor"/>
+        </svg>
+        <p class="error-title">Failed to load library</p>
+        <p class="error-sub">Make sure you are serving the app from a local web server and that <code>data.json</code> is present.</p>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       DETAIL MODAL — full entry view
+  ═══════════════════════════════════════════ -->
+  <div
+    id="modal-overlay"
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+    aria-hidden="true"
+    hidden
+  >
+    <div class="modal-container" id="modal-container">
+      <button class="modal-close" id="modal-close" aria-label="Close detail panel">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div id="modal-content" class="modal-content">
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       FORM MODAL — add / edit entry
+  ═══════════════════════════════════════════ -->
+  <div
+    id="form-overlay"
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="form-heading"
+    aria-hidden="true"
+    hidden
+  >
+    <div class="modal-container form-modal-container" id="form-container">
+      <button class="modal-close" id="form-close" aria-label="Close form">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div id="form-body" class="modal-content">
+        <!-- Injected by app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SETTINGS OVERLAY — customisation drawer
+  ═══════════════════════════════════════════ -->
+  <div id="settings-overlay" class="settings-overlay" hidden>
+    <aside
+      id="settings-drawer"
+      class="settings-drawer"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-heading"
+    >
+      <div class="settings-head">
+        <h2 id="settings-heading" class="settings-title">Settings</h2>
+        <button id="settings-close" class="modal-close" aria-label="Close settings">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="settings-body">
+
+        <!-- Settings tabs -->
+        <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+          <button class="settings-tab active" role="tab" aria-selected="true" aria-controls="settings-panel-general" id="tab-general" data-panel="general">General</button>
+          <button class="settings-tab" role="tab" aria-selected="false" aria-controls="settings-panel-themes" id="tab-themes" data-panel="themes">Themes</button>
+          <button class="settings-tab" role="tab" aria-selected="false" aria-controls="settings-panel-library" id="tab-library" data-panel="library">Library</button>
+        </div>
+
+        <!-- ── General panel ── -->
+        <div id="settings-panel-general" class="settings-tab-panel">
+
+          <!-- View mode -->
+          <section class="settings-section" aria-labelledby="settings-view-label">
+            <h3 id="settings-view-label" class="settings-section-label">View Mode</h3>
+            <div class="settings-toggle-row" role="group" aria-label="View mode">
+              <button class="settings-toggle" data-setting="viewMode" data-value="grid">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <rect x="3" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>
+                  <rect x="14" y="14" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Grid
+              </button>
+              <button class="settings-toggle" data-setting="viewMode" data-value="list">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <line x1="8" y1="6"  x2="21" y2="6"  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="8" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="8" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <circle cx="3" cy="6"  r="1.5" fill="currentColor"/>
+                  <circle cx="3" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="3" cy="18" r="1.5" fill="currentColor"/>
+                </svg>
+                List
+              </button>
+            </div>
+          </section>
+
+          <!-- Card size -->
+          <section class="settings-section" aria-labelledby="settings-size-label">
+            <h3 id="settings-size-label" class="settings-section-label">Card Size</h3>
+            <div class="settings-toggle-row card-size-row" role="group" aria-label="Card size">
+              <button class="settings-toggle" data-setting="cardSize" data-value="tiny">Tiny</button>
+              <button class="settings-toggle" data-setting="cardSize" data-value="small">Small</button>
+              <button class="settings-toggle" data-setting="cardSize" data-value="compact">Compact</button>
+              <button class="settings-toggle" data-setting="cardSize" data-value="normal">Normal</button>
+              <button class="settings-toggle" data-setting="cardSize" data-value="large">Large</button>
+              <button class="settings-toggle" data-setting="cardSize" data-value="spacious">Spacious</button>
+            </div>
+          </section>
+
+          <!-- Scoring System (Task 11) -->
+          <section class="settings-section" aria-labelledby="settings-scoring-label">
+            <h3 id="settings-scoring-label" class="settings-section-label">Scoring System</h3>
+            <div class="settings-toggle-row card-size-row" role="group" aria-label="Scoring system">
+              <button class="settings-toggle" data-setting="scoringSystem" data-value="1-10">1&#x2013;10</button>
+              <button class="settings-toggle" data-setting="scoringSystem" data-value="1-5-stars">5 Stars</button>
+              <button class="settings-toggle" data-setting="scoringSystem" data-value="1-100">1&#x2013;100</button>
+              <button class="settings-toggle" data-setting="scoringSystem" data-value="letter">Letter</button>
+              <button class="settings-toggle" data-setting="scoringSystem" data-value="thumbs">Thumbs</button>
+            </div>
+          </section>
+
+          <!-- Backup Encryption -->
+          <section class="settings-section" aria-labelledby="settings-enc-label">
+            <h3 id="settings-enc-label" class="settings-section-label">Backup Encryption</h3>
+            <div class="settings-toggle-row" role="group" aria-label="Backup encryption mode">
+              <button class="settings-toggle" data-setting="backupEncryption" data-value="none">None</button>
+              <button class="settings-toggle" data-setting="backupEncryption" data-value="default">Default Key</button>
+              <button class="settings-toggle" data-setting="backupEncryption" data-value="password">Password</button>
+            </div>
+            <p class="settings-hint" id="settings-enc-hint"></p>
+          </section>
+
+          <!-- Library data management -->
+          <section class="settings-section" aria-labelledby="settings-data-label">
+            <h3 id="settings-data-label" class="settings-section-label">Library Data</h3>
+            <div class="settings-data-btns">
+              <button id="export-data-btn" class="settings-data-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <polyline points="7 10 12 15 17 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Export Library (JSON)
+              </button>
+              <label for="import-data-input" class="settings-data-btn" tabindex="0" role="button" id="import-data-label">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <polyline points="17 8 12 3 7 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Import Library (JSON)
+              </label>
+              <input type="file" id="import-data-input" accept=".json" class="visually-hidden"/>
+              <button id="reset-user-data-btn" class="settings-data-btn settings-danger-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <polyline points="1 4 1 10 7 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M3.51 15a9 9 0 1 0 .49-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Reset User Data
+              </button>
+              <!-- Inline confirmation shown when Reset is clicked -->
+              <div id="reset-confirm" class="settings-reset-confirm" hidden role="alertdialog" aria-labelledby="reset-confirm-msg">
+                <p id="reset-confirm-msg" class="delete-confirm-msg">Remove all edits, additions, and deletions? You can undo this with Ctrl+Z within 90 seconds.</p>
+                <div class="delete-confirm-btns">
+                  <button id="reset-cancel-btn" class="btn-secondary">Cancel</button>
+                  <button id="reset-confirm-btn" class="btn-danger">Confirm Reset</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Export Formats (Task 19) -->
+          <section class="settings-section" aria-labelledby="settings-export-label">
+            <h3 id="settings-export-label" class="settings-section-label">Export Formats</h3>
+            <div class="settings-data-btns">
+              <button id="export-csv-btn" class="settings-data-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                Export as CSV
+              </button>
+              <button id="export-md-btn" class="settings-data-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                Export as Markdown
+              </button>
+            </div>
+            <p class="settings-hint" id="export-format-hint"></p>
+          </section>
+
+          <!-- Keyboard Shortcuts (Task 21) -->
+          <section class="settings-section" aria-labelledby="settings-shortcuts-label">
+            <h3 id="settings-shortcuts-label" class="settings-section-label">Keyboard Shortcuts</h3>
+            <div class="settings-shortcuts-list">
+              <div class="shortcut-row"><kbd>/</kbd><span>Focus search bar</span></div>
+              <div class="shortcut-row"><kbd>Ctrl+Z</kbd><span>Undo last action (within 90s)</span></div>
+              <div class="shortcut-row"><kbd>Ctrl+Y</kbd><span>Redo last undone action</span></div>
+              <div class="shortcut-row"><kbd>Escape</kbd><span>Close any open modal</span></div>
+              <div class="shortcut-row"><kbd>Tab</kbd><span>Navigate between elements</span></div>
+              <div class="shortcut-row"><kbd>Enter / Space</kbd><span>Open selected card</span></div>
+            </div>
+          </section>
+
+        </div><!-- end #settings-panel-general -->
+
+        <!-- ── Themes panel — all visual/design customisation ── -->
+        <div id="settings-panel-themes" class="settings-tab-panel" hidden>
+
+          <!-- Theme Presets -->
+          <section class="settings-section" aria-labelledby="settings-theme-label">
+            <h3 id="settings-theme-label" class="settings-section-label">Theme</h3>
+            <div class="theme-preset-row" role="group" aria-label="Choose theme preset">
+              <button class="theme-preset-swatch settings-toggle" data-setting="themePreset" data-value="dark">
+                <span class="swatch-colors"><span style="background:#0d0f14"></span><span style="background:#131720"></span><span style="background:#1a1f2e"></span></span>
+                <span class="swatch-label">Dark</span>
+              </button>
+              <button class="theme-preset-swatch settings-toggle" data-setting="themePreset" data-value="light">
+                <span class="swatch-colors"><span style="background:#f0f2f7"></span><span style="background:#ffffff"></span><span style="background:#e4e8f0"></span></span>
+                <span class="swatch-label">Light</span>
+              </button>
+              <button class="theme-preset-swatch settings-toggle" data-setting="themePreset" data-value="amoled">
+                <span class="swatch-colors"><span style="background:#000000"></span><span style="background:#0a0a0a"></span><span style="background:#141414"></span></span>
+                <span class="swatch-label">AMOLED</span>
+              </button>
+              <button class="theme-preset-swatch settings-toggle" data-setting="themePreset" data-value="nord">
+                <span class="swatch-colors"><span style="background:#2e3440"></span><span style="background:#3b4252"></span><span style="background:#434c5e"></span></span>
+                <span class="swatch-label">Nord</span>
+              </button>
+              <button class="theme-preset-swatch settings-toggle" data-setting="themePreset" data-value="solarized">
+                <span class="swatch-colors"><span style="background:#002b36"></span><span style="background:#073642"></span><span style="background:#0a4050"></span></span>
+                <span class="swatch-label">Solarized</span>
+              </button>
+              <button class="theme-preset-swatch settings-toggle" data-setting="themePreset" data-value="dracula">
+                <span class="swatch-colors"><span style="background:#282a36"></span><span style="background:#313345"></span><span style="background:#3c3f58"></span></span>
+                <span class="swatch-label">Dracula</span>
+              </button>
+              <button class="theme-preset-swatch settings-toggle" data-setting="themePreset" data-value="rosepine">
+                <span class="swatch-colors"><span style="background:#191724"></span><span style="background:#1f1d2e"></span><span style="background:#26233a"></span></span>
+                <span class="swatch-label">Ros&#xe9; Pine</span>
+              </button>
+              <button class="theme-preset-swatch settings-toggle" data-setting="themePreset" data-value="catppuccin">
+                <span class="swatch-colors"><span style="background:#1e1e2e"></span><span style="background:#252536"></span><span style="background:#313244"></span></span>
+                <span class="swatch-label">Catppuccin</span>
+              </button>
+              <button class="theme-preset-swatch settings-toggle" data-setting="themePreset" data-value="sepia">
+                <span class="swatch-colors"><span style="background:#f5f0e8"></span><span style="background:#faf6ee"></span><span style="background:#ece5d8"></span></span>
+                <span class="swatch-label">Sepia</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- Custom Background Colours -->
+          <section class="settings-section" aria-labelledby="settings-custombg-label">
+            <h3 id="settings-custombg-label" class="settings-section-label">Custom Background</h3>
+            <p class="settings-hint">Override preset backgrounds with custom colours.</p>
+            <div class="settings-color-grid">
+              <div class="settings-color-item"><label for="bg-primary-input">Primary</label><input type="color" id="bg-primary-input" value="#0d0f14"/></div>
+              <div class="settings-color-item"><label for="bg-secondary-input">Card</label><input type="color" id="bg-secondary-input" value="#131720"/></div>
+              <div class="settings-color-item"><label for="bg-elevated-input">Elevated</label><input type="color" id="bg-elevated-input" value="#1a1f2e"/></div>
+              <button id="reset-custom-bg-btn" class="settings-reset-btn">Reset</button>
+            </div>
+          </section>
+
+          <!-- Accent colour -->
+          <section class="settings-section" aria-labelledby="settings-color-label">
+            <h3 id="settings-color-label" class="settings-section-label">Accent Colour</h3>
+            <div class="settings-color-row">
+              <label for="accent-color-input" class="visually-hidden">Accent colour</label>
+              <input type="color" id="accent-color-input" class="settings-color-input" value="#4a80d4"/>
+              <div class="settings-color-preview" id="accent-color-preview">#4a80d4</div>
+              <button id="reset-accent-btn" class="settings-reset-btn">Reset</button>
+            </div>
+          </section>
+
+          <!-- Font Scale -->
+          <section class="settings-section" aria-labelledby="settings-fontscale-label">
+            <h3 id="settings-fontscale-label" class="settings-section-label">Font Size</h3>
+            <div class="settings-toggle-row card-size-row" role="group" aria-label="Font size scale">
+              <button class="settings-toggle" data-setting="fontScale" data-value="tiny">Tiny</button>
+              <button class="settings-toggle" data-setting="fontScale" data-value="small">Small</button>
+              <button class="settings-toggle" data-setting="fontScale" data-value="normal">Normal</button>
+              <button class="settings-toggle" data-setting="fontScale" data-value="large">Large</button>
+              <button class="settings-toggle" data-setting="fontScale" data-value="xl">XL</button>
+            </div>
+          </section>
+
+          <!-- Font Family -->
+          <section class="settings-section" aria-labelledby="settings-fontfamily-label">
+            <h3 id="settings-fontfamily-label" class="settings-section-label">Font Family</h3>
+            <div class="settings-toggle-row" role="group" aria-label="Font family">
+              <button class="settings-toggle" data-setting="fontFamily" data-value="system">System</button>
+              <button class="settings-toggle" data-setting="fontFamily" data-value="serif">Serif</button>
+              <button class="settings-toggle" data-setting="fontFamily" data-value="mono">Mono</button>
+              <button class="settings-toggle" data-setting="fontFamily" data-value="humanist">Humanist</button>
+            </div>
+          </section>
+
+          <!-- Card Hover Effect -->
+          <section class="settings-section" aria-labelledby="settings-hover-label">
+            <h3 id="settings-hover-label" class="settings-section-label">Card Hover Effect</h3>
+            <div class="settings-toggle-row" role="group" aria-label="Card hover effect">
+              <button class="settings-toggle" data-setting="cardHover" data-value="lift">Lift</button>
+              <button class="settings-toggle" data-setting="cardHover" data-value="glow">Glow</button>
+              <button class="settings-toggle" data-setting="cardHover" data-value="border">Border</button>
+              <button class="settings-toggle" data-setting="cardHover" data-value="none">None</button>
+            </div>
+          </section>
+
+          <!-- Animation Speed -->
+          <section class="settings-section" aria-labelledby="settings-animation-label">
+            <h3 id="settings-animation-label" class="settings-section-label">Animation Speed</h3>
+            <div class="settings-toggle-row" role="group" aria-label="Animation speed">
+              <button class="settings-toggle" data-setting="animationSpeed" data-value="instant">Instant</button>
+              <button class="settings-toggle" data-setting="animationSpeed" data-value="fast">Fast</button>
+              <button class="settings-toggle" data-setting="animationSpeed" data-value="normal">Normal</button>
+              <button class="settings-toggle" data-setting="animationSpeed" data-value="smooth">Smooth</button>
+            </div>
+          </section>
+
+          <!-- Border Radius -->
+          <section class="settings-section" aria-labelledby="settings-radius-label">
+            <h3 id="settings-radius-label" class="settings-section-label">Border Radius</h3>
+            <div class="settings-toggle-row" role="group" aria-label="Border radius style">
+              <button class="settings-toggle" data-setting="borderRadius" data-value="sharp">Sharp</button>
+              <button class="settings-toggle" data-setting="borderRadius" data-value="subtle">Subtle</button>
+              <button class="settings-toggle" data-setting="borderRadius" data-value="rounded">Rounded</button>
+              <button class="settings-toggle" data-setting="borderRadius" data-value="pill">Pill</button>
+            </div>
+          </section>
+
+          <!-- Grid Gap -->
+          <section class="settings-section" aria-labelledby="settings-gap-label">
+            <h3 id="settings-gap-label" class="settings-section-label">Grid Spacing</h3>
+            <div class="settings-toggle-row" role="group" aria-label="Grid gap">
+              <button class="settings-toggle" data-setting="gridGap" data-value="tight">Tight</button>
+              <button class="settings-toggle" data-setting="gridGap" data-value="normal">Normal</button>
+              <button class="settings-toggle" data-setting="gridGap" data-value="relaxed">Relaxed</button>
+              <button class="settings-toggle" data-setting="gridGap" data-value="spacious">Spacious</button>
+            </div>
+          </section>
+
+          <!-- Shadow Intensity -->
+          <section class="settings-section" aria-labelledby="settings-shadow-label">
+            <h3 id="settings-shadow-label" class="settings-section-label">Shadow Intensity</h3>
+            <div class="settings-toggle-row" role="group" aria-label="Shadow intensity">
+              <button class="settings-toggle" data-setting="shadowIntensity" data-value="none">None</button>
+              <button class="settings-toggle" data-setting="shadowIntensity" data-value="subtle">Subtle</button>
+              <button class="settings-toggle" data-setting="shadowIntensity" data-value="normal">Normal</button>
+              <button class="settings-toggle" data-setting="shadowIntensity" data-value="dramatic">Dramatic</button>
+            </div>
+          </section>
+
+          <!-- Card Entrance Animation -->
+          <section class="settings-section" aria-labelledby="settings-entrance-label">
+            <h3 id="settings-entrance-label" class="settings-section-label">Card Entrance</h3>
+            <div class="settings-toggle-row" role="group" aria-label="Card entrance animation">
+              <button class="settings-toggle" data-setting="cardEntrance" data-value="none">None</button>
+              <button class="settings-toggle" data-setting="cardEntrance" data-value="fade">Fade</button>
+              <button class="settings-toggle" data-setting="cardEntrance" data-value="slide-up">Slide Up</button>
+              <button class="settings-toggle" data-setting="cardEntrance" data-value="scale">Scale</button>
+            </div>
+          </section>
+
+          <!-- Line Height -->
+          <section class="settings-section" aria-labelledby="settings-lh-label">
+            <h3 id="settings-lh-label" class="settings-section-label">Reading Density</h3>
+            <div class="settings-toggle-row" role="group" aria-label="Line height">
+              <button class="settings-toggle" data-setting="lineHeight" data-value="tight">Tight</button>
+              <button class="settings-toggle" data-setting="lineHeight" data-value="normal">Normal</button>
+              <button class="settings-toggle" data-setting="lineHeight" data-value="relaxed">Relaxed</button>
+            </div>
+          </section>
+
+          <!-- Sidebar Position -->
+          <section class="settings-section" aria-labelledby="settings-sidebar-label">
+            <h3 id="settings-sidebar-label" class="settings-section-label">Sidebar Position</h3>
+            <div class="settings-toggle-row" role="group" aria-label="Sidebar position">
+              <button class="settings-toggle" data-setting="sidebarPosition" data-value="left">Left</button>
+              <button class="settings-toggle" data-setting="sidebarPosition" data-value="right">Right</button>
+            </div>
+          </section>
+
+          <!-- Header Style -->
+          <section class="settings-section" aria-labelledby="settings-header-label">
+            <h3 id="settings-header-label" class="settings-section-label">Header Style</h3>
+            <div class="settings-toggle-row" role="group" aria-label="Header style">
+              <button class="settings-toggle" data-setting="headerStyle" data-value="standard">Standard</button>
+              <button class="settings-toggle" data-setting="headerStyle" data-value="compact">Compact</button>
+              <button class="settings-toggle" data-setting="headerStyle" data-value="auto-hide">Auto-Hide</button>
+            </div>
+          </section>
+
+          <!-- Card Info Density -->
+          <section class="settings-section" aria-labelledby="settings-cardinfo-label">
+            <h3 id="settings-cardinfo-label" class="settings-section-label">Card Info</h3>
+            <p class="settings-hint">Toggle which details show on cards.</p>
+            <div class="settings-checkbox-grid" id="card-info-toggles">
+              <label><input type="checkbox" class="bingery-checkbox" data-info="author" checked/> Author</label>
+              <label><input type="checkbox" class="bingery-checkbox" data-info="rating" checked/> Rating</label>
+              <label><input type="checkbox" class="bingery-checkbox" data-info="statusDot" checked/> Status Dot</label>
+              <label><input type="checkbox" class="bingery-checkbox" data-info="progressBar" checked/> Progress</label>
+            </div>
+          </section>
+
+          <!-- Custom Status Colours -->
+          <section class="settings-section" aria-labelledby="settings-statuscolors-label">
+            <h3 id="settings-statuscolors-label" class="settings-section-label">Status Colours</h3>
+            <div class="settings-color-grid">
+              <div class="settings-color-item"><label for="sc-completed">Done</label><input type="color" id="sc-completed" value="#40c870"/></div>
+              <div class="settings-color-item"><label for="sc-inprogress">Active</label><input type="color" id="sc-inprogress" value="#e8c030"/></div>
+              <div class="settings-color-item"><label for="sc-dropped">Drop</label><input type="color" id="sc-dropped" value="#e85050"/></div>
+              <div class="settings-color-item"><label for="sc-planned">Plan</label><input type="color" id="sc-planned" value="#4a80d4"/></div>
+              <button id="reset-status-colors-btn" class="settings-reset-btn">Reset</button>
+            </div>
+          </section>
+
+          <!-- Custom Type Badge Colours -->
+          <section class="settings-section" aria-labelledby="settings-typecolors-label">
+            <h3 id="settings-typecolors-label" class="settings-section-label">Type Badge Colours</h3>
+            <div class="settings-color-grid" id="type-colors-row">
+              <div class="settings-color-item"><label>Anime</label><input type="color" id="tc-anime" data-type="anime" value="#e8703a"/></div>
+              <div class="settings-color-item"><label>Manga</label><input type="color" id="tc-manga" data-type="manga" value="#30c8c0"/></div>
+              <div class="settings-color-item"><label>Manhwa</label><input type="color" id="tc-manhwa" data-type="manhwa" value="#a060e0"/></div>
+              <div class="settings-color-item"><label>Manhua</label><input type="color" id="tc-manhua" data-type="manhua" value="#e878a8"/></div>
+              <div class="settings-color-item"><label>Book</label><input type="color" id="tc-book" data-type="book" value="#70c038"/></div>
+              <div class="settings-color-item"><label>Movie</label><input type="color" id="tc-movie" data-type="movie" value="#e8c030"/></div>
+              <button id="reset-type-colors-btn" class="settings-reset-btn">Reset</button>
+            </div>
+          </section>
+
+          <!-- Custom CSS — power user feature for injecting custom styles -->
+          <section class="settings-section" aria-labelledby="settings-customcss-label">
+            <h3 id="settings-customcss-label" class="settings-section-label">Custom CSS</h3>
+            <p class="settings-hint">Inject your own CSS overrides. Changes apply immediately.</p>
+            <textarea id="custom-css-textarea" class="custom-css-textarea" placeholder="/* e.g. .media-card { opacity: 0.9; } */" spellcheck="false"></textarea>
+          </section>
+
+          <!-- Theme Import / Export — share visual settings as a small JSON file -->
+          <section class="settings-section" aria-labelledby="settings-themeio-label">
+            <h3 id="settings-themeio-label" class="settings-section-label">Theme Import / Export</h3>
+            <p class="settings-hint">Share your visual settings as a portable JSON file.</p>
+            <div class="settings-theme-io">
+              <button id="export-theme-btn" class="settings-data-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <polyline points="7 10 12 15 17 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Export Theme
+              </button>
+              <label for="import-theme-input" class="settings-data-btn" tabindex="0" role="button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <polyline points="17 8 12 3 7 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Import Theme
+              </label>
+              <input type="file" id="import-theme-input" accept=".json" class="visually-hidden"/>
+            </div>
+          </section>
+
+        </div><!-- end #settings-panel-themes -->
+
+        <!-- ── Library panel ── -->
+        <div id="settings-panel-library" class="settings-tab-panel" hidden>
+          <section class="settings-section" aria-labelledby="settings-types-label">
+            <h3 id="settings-types-label" class="settings-section-label">Media Types</h3>
+            <ul class="library-tag-list" id="types-list"></ul>
+            <div class="library-add-row">
+              <input type="text" class="form-input library-add-input" id="types-add-input" placeholder="New type name…" maxlength="40"/>
+              <button class="btn-primary library-add-btn" id="types-add-btn">Add</button>
+            </div>
+          </section>
+          <section class="settings-section" aria-labelledby="settings-statuses-label">
+            <h3 id="settings-statuses-label" class="settings-section-label">Media Statuses</h3>
+            <ul class="library-tag-list" id="statuses-list"></ul>
+            <div class="library-add-row">
+              <input type="text" class="form-input library-add-input" id="statuses-add-input" placeholder="New status name…" maxlength="40"/>
+              <button class="btn-primary library-add-btn" id="statuses-add-btn">Add</button>
+            </div>
+          </section>
+          <!-- Time Estimates (customizable minutes per unit) -->
+          <section class="settings-section" aria-labelledby="settings-time-est-label">
+            <h3 id="settings-time-est-label" class="settings-section-label">Time Estimates</h3>
+            <p class="settings-hint">Minutes per episode/chapter/page used for time calculations.</p>
+            <div class="settings-time-grid" id="time-est-grid"></div>
+          </section>
+          <!-- Custom Detail Fields -->
+          <section class="settings-section" aria-labelledby="settings-custom-fields-label">
+            <h3 id="settings-custom-fields-label" class="settings-section-label">Custom Detail Fields</h3>
+            <p class="settings-hint">Add your own text fields to every entry form.</p>
+            <ul class="library-tag-list" id="custom-fields-list"></ul>
+            <div class="library-add-row">
+              <input type="text" class="form-input library-add-input" id="custom-fields-add-input" placeholder="New field name…" maxlength="40"/>
+              <button class="btn-primary library-add-btn" id="custom-fields-add-btn">Add</button>
+            </div>
+          </section>
+          <!-- Sub-Rating Dimensions -->
+          <section class="settings-section" aria-labelledby="settings-subdims-label">
+            <h3 id="settings-subdims-label" class="settings-section-label">Sub-Rating Dimensions</h3>
+            <p class="settings-hint">Categories shown in the Sub-Ratings section of each entry form.</p>
+            <ul class="library-tag-list" id="subdims-list"></ul>
+            <div class="library-add-row">
+              <input type="text" class="form-input library-add-input" id="subdims-add-input" placeholder="New dimension name…" maxlength="40"/>
+              <button class="btn-primary library-add-btn" id="subdims-add-btn">Add</button>
+            </div>
+          </section>
+          <!-- Relationship Types (Task 1) -->
+          <section class="settings-section" aria-labelledby="settings-relations-label">
+            <h3 id="settings-relations-label" class="settings-section-label">Relationship Types</h3>
+            <p class="settings-hint">Used when linking related entries (e.g. Sequel, Prequel).</p>
+            <ul class="library-tag-list" id="relations-list"></ul>
+            <div class="library-add-row">
+              <input type="text" class="form-input library-add-input" id="relations-add-input" placeholder="New relationship type…" maxlength="40"/>
+              <button class="btn-primary library-add-btn" id="relations-add-btn">Add</button>
+            </div>
+          </section>
+          <!-- Pin Limit -->
+          <section class="settings-section" aria-labelledby="settings-pin-limit-label">
+            <h3 id="settings-pin-limit-label" class="settings-section-label">Pin Limit</h3>
+            <p class="settings-hint">Maximum number of entries that can be pinned to the top of the grid (1–20).</p>
+            <div class="library-add-row">
+              <input type="number" class="form-input" id="pin-limit-input" min="1" max="20" step="1" style="width:80px"/>
+              <button class="btn-primary library-add-btn" id="pin-limit-save-btn">Save</button>
+            </div>
+          </section>
+        </div><!-- end #settings-panel-library -->
+
+      </div>
+    </aside>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TOOLS OVERLAY — tools drawer
+  ═══════════════════════════════════════════ -->
+  <div id="tools-overlay" class="settings-overlay" hidden>
+    <aside
+      id="tools-drawer"
+      class="settings-drawer"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tools-heading"
+    >
+      <div class="settings-head">
+        <h2 id="tools-heading" class="settings-title">Tools</h2>
+        <button id="tools-close" class="modal-close" aria-label="Close tools">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="settings-body">
+        <div class="settings-tools-grid">
+          <button class="settings-data-btn" id="btn-statistics">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 20V10M12 20V4M6 20v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Statistics
+          </button>
+          <button class="settings-data-btn" id="btn-activity-log">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2"/><line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"/><line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"/></svg>
+            Activity Log
+          </button>
+          <button class="settings-data-btn" id="btn-comparison">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="18" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><rect x="14" y="3" width="7" height="18" rx="1" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            Compare
+          </button>
+          <button class="settings-data-btn" id="btn-recommendations">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            Recommendations
+          </button>
+          <button class="settings-data-btn" id="btn-roulette">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8v4l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Roulette Wheel
+          </button>
+          <button class="settings-data-btn" id="btn-weighted-picker">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="none" stroke="currentColor" stroke-width="2"/><line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"/></svg>
+            Smart Picker
+          </button>
+          <button class="settings-data-btn" id="btn-merge-dupes">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="16 16 12 12 8 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="12" x2="12" y2="21" stroke="currentColor" stroke-width="2"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            Merge Duplicates
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       PASSWORD MODAL — for encrypted backup
+  ═══════════════════════════════════════════ -->
+  <div id="password-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="password-heading" aria-hidden="true" hidden>
+    <div class="modal-container password-modal-container" id="password-container">
+      <div id="password-body" class="modal-content">
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast-notification" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+
+</body>
+</html>

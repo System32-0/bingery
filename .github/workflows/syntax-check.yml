@@ -1,0 +1,19 @@
+name: Syntax Check
+
+on:
+  push:
+    paths:
+      - "_middleware.js"
+      - "app.js"
+      - "404.js"
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Node.js syntax
+        run: |
+          node --check _middleware.js
+          node --check 404.js

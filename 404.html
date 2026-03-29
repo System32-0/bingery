@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Bingery — Page Not Found"/>
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="
+      default-src 'none';
+      script-src 'self';
+      style-src 'unsafe-inline';
+      img-src 'self' data:;
+    "
+  />
+  <title>404 — Bingery</title>
+  <style>
+    :root {
+      --bg-primary:    #0f1219;
+      --bg-secondary:  #151a26;
+      --bg-elevated:   #1a1f2e;
+      --border:        #252b3b;
+      --text-primary:  #e8eaf0;
+      --text-secondary:#8a90a8;
+      --text-muted:    #4a5068;
+      --accent:        #4a80d4;
+      --accent-hover:  #6298e8;
+      --accent-subtle: rgba(74, 128, 212, 0.15);
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont,
+                   "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      --radius-lg: 12px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .error-container {
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+    }
+    .error-code {
+      font-size: 8rem;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--accent);
+      letter-spacing: -0.04em;
+      opacity: 0.85;
+    }
+    .error-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-top: 8px;
+      color: var(--text-primary);
+    }
+    .error-message {
+      margin-top: 12px;
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .error-divider {
+      width: 48px;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin: 24px auto;
+    }
+    .error-home-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 24px;
+      padding: 10px 24px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: var(--radius-lg);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: background 0.15s ease;
+    }
+    .error-home-link:hover { background: var(--accent-hover); }
+    .error-home-link svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .error-path {
+      margin-top: 20px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: ui-monospace, "SFMono-Regular", "Cascadia Code", Menlo, Consolas, monospace;
+      word-break: break-all;
+    }
+    @media (max-width: 600px) {
+      .error-code { font-size: 5rem; }
+      .error-title { font-size: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <main class="error-container" role="main">
+    <div class="error-code">404</div>
+    <h1 class="error-title">Page Not Found</h1>
+    <div class="error-divider"></div>
+    <p class="error-message">
+      The page you're looking for doesn't exist or has been moved.
+      Check the URL and try again, or head back to your library.
+    </p>
+    <a href="/" class="error-home-link">
+      <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to Library
+    </a>
+    <p class="error-path" id="error-path"></p>
+  </main>
+  <script src="404.js"></script>
+</body>
+</html>
