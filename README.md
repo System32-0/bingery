@@ -23,4 +23,4 @@ A self-hosted media tracking app for anime, manga, manhwa, manhua, books, and mo
  
 ## License
  
-GPL-3.0 — see [LICENSE](LICENSE).
+AGPL-3.0 — see [LICENSE](LICENSE).
